@@ -40,7 +40,7 @@ export function Hero({ slides, stats }: { slides: Slide[]; stats: { label: strin
         className="absolute inset-0 -z-10 opacity-70"
         style={{
           background:
-            "radial-gradient(60% 55% at 78% 12%, rgba(180,140,36,0.30), transparent 60%), radial-gradient(48% 48% at 8% 88%, rgba(61,84,144,0.35), transparent 62%)",
+            "radial-gradient(60% 55% at 78% 12%, rgba(181,135,38,0.30), transparent 60%), radial-gradient(48% 48% at 8% 88%, rgba(36,66,188,0.35), transparent 62%)",
         }}
       />
       <div
@@ -120,7 +120,7 @@ export function Hero({ slides, stats }: { slides: Slide[]; stats: { label: strin
                     src="/brand/logo-light.png"
                     alt=""
                     width={1024}
-                    height={1043}
+                    height={390}
                     priority
                     className="h-auto w-full max-w-[320px] opacity-90"
                   />

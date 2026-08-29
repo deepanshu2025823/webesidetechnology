@@ -94,7 +94,7 @@ export default async function AboutPage() {
                   src="/brand/logo-light.png"
                   alt={settings.siteName}
                   width={1024}
-                  height={1043}
+                  height={390}
                   className="mx-auto h-auto w-full max-w-[260px]"
                 />
                 <p className="mt-8 text-center font-display text-lg leading-relaxed text-gold-200">

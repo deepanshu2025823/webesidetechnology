@@ -31,7 +31,7 @@ export function PageHero({
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "radial-gradient(55% 70% at 82% 8%, rgba(180,140,36,0.26), transparent 62%), radial-gradient(45% 60% at 5% 95%, rgba(61,84,144,0.32), transparent 60%)",
+              "radial-gradient(55% 70% at 82% 8%, rgba(181,135,38,0.26), transparent 62%), radial-gradient(45% 60% at 5% 95%, rgba(36,66,188,0.32), transparent 60%)",
           }}
         />
       )}

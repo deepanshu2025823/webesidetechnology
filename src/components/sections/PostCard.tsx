@@ -29,7 +29,7 @@ export function PostCard({ post, priority = false }: { post: PostCardData; prior
           />
         ) : (
           <div className="grid h-full place-items-center bg-navy-900">
-            <Image src="/brand/logo-mark-light.png" alt="" width={512} height={303} className="w-24 opacity-50" />
+            <Image src="/brand/logo-mark-light.png" alt="" width={512} height={666} className="h-20 w-auto opacity-50" />
           </div>
         )}
       </Link>

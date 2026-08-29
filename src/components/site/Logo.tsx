@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-/** Intrinsic size of the supplied badge lockup, used to keep the aspect ratio. */
+/** Intrinsic size of the supplied wordmark lockup, used to keep the aspect ratio. */
 const LOCKUP_WIDTH = 1024;
-const LOCKUP_HEIGHT = 1043;
+const LOCKUP_HEIGHT = 390;
 
 /**
  * The full logo lockup, sized by height.

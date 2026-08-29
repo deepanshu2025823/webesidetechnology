@@ -139,7 +139,7 @@ export default async function HomePage() {
                   src="/brand/logo-light.png"
                   alt={settings.siteName}
                   width={1024}
-                  height={1043}
+                  height={390}
                   className="mx-auto h-auto w-full max-w-xs"
                 />
               </div>
@@ -238,7 +238,7 @@ export default async function HomePage() {
           <div
             aria-hidden
             className="absolute inset-0 -z-10"
-            style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(180,140,36,0.20), transparent 65%)" }}
+            style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(181,135,38,0.20), transparent 65%)" }}
           />
           <Container>
             <SectionHeading eyebrow="Client voices" title="What our clients say" align="center" tone="dark" />

@@ -31,7 +31,7 @@ export function ProjectCard({ project, priority = false }: { project: ProjectCar
           />
         ) : (
           <div className="grid h-full place-items-center bg-navy-900">
-            <Image src="/brand/logo-mark-light.png" alt="" width={512} height={303} className="w-28 opacity-50" />
+            <Image src="/brand/logo-mark-light.png" alt="" width={512} height={666} className="h-24 w-auto opacity-50" />
           </div>
         )}
         {project.industry ? (

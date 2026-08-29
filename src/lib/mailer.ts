@@ -74,11 +74,11 @@ export async function sendEnquiryNotification(payload: {
       replyTo: payload.email,
       subject: `New enquiry — ${payload.name}${payload.serviceInterest ? ` (${payload.serviceInterest})` : ""}`,
       html: `
-        <div style="font-family:system-ui,sans-serif;color:#0f1a3c">
+        <div style="font-family:system-ui,sans-serif;color:#011460">
           <h2 style="margin:0 0 16px">New website enquiry</h2>
           <table style="border-collapse:collapse;font-size:14px">${rows}</table>
           <p style="margin:20px 0 6px;color:#64748b">Message</p>
-          <p style="white-space:pre-wrap;margin:0;padding:14px;background:#faf8f3;border-left:3px solid #b48c24">${escapeHtml(payload.message)}</p>
+          <p style="white-space:pre-wrap;margin:0;padding:14px;background:#faf8f3;border-left:3px solid #b58726">${escapeHtml(payload.message)}</p>
         </div>`,
     });
 

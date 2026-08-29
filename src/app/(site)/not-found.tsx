@@ -12,8 +12,8 @@ export default function NotFound() {
             src="/brand/logo-mark-light.png"
             alt=""
             width={512}
-            height={303}
-            className="mx-auto h-auto w-32 opacity-70"
+            height={666}
+            className="mx-auto h-32 w-auto opacity-70"
           />
           <p className="mt-10 font-display text-6xl text-gold-400">404</p>
           <h1 className="mt-4 text-3xl text-white">This page has moved on</h1>

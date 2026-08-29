@@ -3,21 +3,21 @@
 
 /*
  * Brand palette sampled directly from the client logo artwork:
- *   gold  #b48c24  (crown + wordmark)
- *   navy  #0f1a3c  (monogram + descender wordmark)
+ *   navy  #011460  (SAHAB wordmark + tagline)
+ *   gold  #b58726  (INDIA + the rules flanking the tagline)
  */
 @theme {
-  --color-navy-50: #f2f4f9;
-  --color-navy-100: #e2e7f2;
-  --color-navy-200: #c3cde3;
-  --color-navy-300: #94a6cd;
-  --color-navy-400: #5e77b0;
-  --color-navy-500: #3d5490;
-  --color-navy-600: #2b3d6e;
-  --color-navy-700: #22315a;
-  --color-navy-800: #16234a;
-  --color-navy-900: #0f1a3c;
-  --color-navy-950: #080f26;
+  --color-navy-50: #f4f5fb;
+  --color-navy-100: #e4e8f6;
+  --color-navy-200: #c4ccee;
+  --color-navy-300: #8e9fe1;
+  --color-navy-400: #506ad3;
+  --color-navy-500: #2442bc;
+  --color-navy-600: #132e9a;
+  --color-navy-700: #082081;
+  --color-navy-800: #03186d;
+  --color-navy-900: #011460;
+  --color-navy-950: #010c37;
 
   --color-gold-50: #fdf9ed;
   --color-gold-100: #f9f0d3;
@@ -25,7 +25,7 @@
   --color-gold-300: #e8c76a;
   --color-gold-400: #d9ad3e;
   --color-gold-500: #c99a2b;
-  --color-gold-600: #b48c24;
+  --color-gold-600: #b58726;
   --color-gold-700: #91691d;
   --color-gold-800: #77531f;
   --color-gold-900: #64451f;
@@ -37,13 +37,13 @@
   --font-display: var(--font-playfair), Georgia, "Times New Roman", serif;
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 
-  --shadow-brand: 0 24px 60px -24px rgb(15 26 60 / 0.35);
-  --shadow-gold: 0 18px 45px -18px rgb(180 140 36 / 0.55);
+  --shadow-brand: 0 24px 60px -24px rgb(1 20 96 / 0.35);
+  --shadow-gold: 0 18px 45px -18px rgb(181 135 38 / 0.55);
 }
 
 :root {
   --background: #ffffff;
-  --foreground: #0f1a3c;
+  --foreground: #011460;
 }
 
 @layer base {

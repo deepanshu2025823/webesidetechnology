@@ -18,7 +18,7 @@ export default async function PortalAppLayout({ children }: { children: React.Re
         <div aria-hidden className="h-0.5 w-full bg-gradient-to-r from-gold-700 via-gold-400 to-gold-700" />
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <Link href="/portal" className="flex items-center gap-3">
-            <Image src="/brand/logo-mark-light.png" alt="" width={512} height={303} className="h-8 w-auto" />
+            <Image src="/brand/logo-mark-light.png" alt="" width={512} height={666} className="h-8 w-auto" />
             <span className="flex flex-col leading-none">
               <span className="font-display text-base font-semibold tracking-wide text-gold-400">
                 {settings.siteName.split(" ")[0]}

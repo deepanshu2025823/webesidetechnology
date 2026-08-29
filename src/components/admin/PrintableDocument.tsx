@@ -54,7 +54,7 @@ export function PrintableDocument({ doc }: { doc: PrintDocument }) {
     <div className="mx-auto max-w-[820px] bg-white p-10 text-navy-900 print:p-0">
       <div className="mb-8 flex items-start justify-between gap-8 border-b-2 border-gold-600 pb-6">
         <div>
-          <Image src={doc.agency.logo} alt={doc.agency.name} width={1024} height={1043} className="h-20 w-auto" />
+          <Image src={doc.agency.logo} alt={doc.agency.name} width={1024} height={390} className="h-20 w-auto" />
           <p className="mt-3 font-display text-lg">{doc.agency.name}</p>
           {doc.agency.address ? <p className="text-xs text-slate-600">{doc.agency.address}</p> : null}
           <p className="text-xs text-slate-600">

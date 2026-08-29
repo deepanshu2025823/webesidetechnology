@@ -1,9 +1,9 @@
 /**
- * Turns the supplied Sahab India logo (gold + navy on a solid light
+ * Turns the supplied Sahab India logo (navy + gold on a solid light
  * background) into transparent PNG variants and the favicon set.
  *
- * The source is an AVIF export with a warm off-white backdrop, so the key
- * colour is sampled from the border rather than assumed to be pure white.
+ * Exports arrive with an off-white rather than pure-white backdrop, so the key
+ * colour is sampled from the border instead of being assumed.
  *
  * Run with: node scripts/build-brand-assets.mjs <source.png>
  */
@@ -100,54 +100,92 @@ async function main() {
   const light = await invertNavy(trimmed);
   await sharp(light).resize({ width: 1024 }).png({ compressionLevel: 9 }).toFile(path.join(BRAND_DIR, "logo-light.png"));
 
-  // Crown mark only - legible at favicon sizes where the full lockup is not.
-  // The badge ring is inscribed in the trimmed bounds, so anything beyond 88% of
-  // its radius is ring, not crown, and gets erased before cropping.
-  const mark = await cropCrown(trimmed, m);
+  // The swash S alone - legible at favicon sizes where the full lockup is not.
+  const mark = await cropMonogram(trimmed);
   await sharp(mark).resize({ width: 512 }).png().toFile(path.join(BRAND_DIR, "logo-mark.png"));
   const markLight = await invertNavy(mark);
   await sharp(markLight).resize({ width: 512 }).png().toFile(path.join(BRAND_DIR, "logo-mark-light.png"));
 
   const markMeta = await sharp(mark).metadata();
-  console.log(`crown mark: ${markMeta.width}x${markMeta.height}`);
+  console.log(`monogram: ${markMeta.width}x${markMeta.height}`);
 
   await buildFavicons(markLight);
   await buildSocialCard(light);
 }
 
-/** Erase the badge ring, then trim down to the crown alone. */
-async function cropCrown(lockup, meta) {
+/**
+ * Isolate the swash "S" - the one glyph that still reads at 16px.
+ *
+ * The ornate capitals overlap horizontally but never actually touch, so each is
+ * its own connected component and the S is simply the leftmost substantial one.
+ * Pixels of the neighbouring A that reach into the S's bounding box are dropped
+ * by keeping only the S's own label.
+ */
+async function cropMonogram(lockup) {
   const { data, info } = await sharp(lockup).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const out = Buffer.from(data);
-  const cx = info.width / 2;
-  const cy = info.height / 2;
-  const limit = Math.min(info.width, info.height) / 2 * 0.88;
+  const { width: W, height: H } = info;
+  const inked = (p) => data[p * 4 + 3] > 24;
 
-  for (let y = 0; y < info.height; y++) {
-    for (let x = 0; x < info.width; x++) {
-      const i = (y * info.width + x) * 4;
-      if (Math.hypot(x - cx, y - cy) > limit) {
-        out[i] = out[i + 1] = out[i + 2] = out[i + 3] = 0;
+  const label = new Int32Array(W * H).fill(-1);
+  const comps = [];
+
+  for (let seed = 0; seed < W * H; seed++) {
+    if (!inked(seed) || label[seed] !== -1) continue;
+
+    const box = { id: comps.length, x0: W, y0: H, x1: 0, y1: 0, n: 0 };
+    const stack = [seed];
+    label[seed] = box.id;
+
+    while (stack.length) {
+      const p = stack.pop();
+      const x = p % W;
+      const y = (p / W) | 0;
+      box.n++;
+      if (x < box.x0) box.x0 = x;
+      if (x > box.x1) box.x1 = x;
+      if (y < box.y0) box.y0 = y;
+      if (y > box.y1) box.y1 = y;
+
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const q = ny * W + nx;
+          if (inked(q) && label[q] === -1) {
+            label[q] = box.id;
+            stack.push(q);
+          }
+        }
       }
+    }
+
+    comps.push(box);
+  }
+
+  // Only the wordmark capitals clear this; the tagline, rules and the small
+  // gold INDIA caps all fall well below it.
+  const totalInk = comps.reduce((sum, c) => sum + c.n, 0);
+  const capitals = comps.filter((c) => c.n > totalInk * 0.05);
+  const s = capitals.reduce((leftmost, c) => (c.x0 < leftmost.x0 ? c : leftmost));
+
+  const out = Buffer.alloc(data.length);
+  for (let y = s.y0; y <= s.y1; y++) {
+    for (let x = s.x0; x <= s.x1; x++) {
+      const p = y * W + x;
+      if (label[p] === s.id) out.set(data.subarray(p * 4, p * 4 + 4), p * 4);
     }
   }
 
-  const ringless = await sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } })
+  return sharp(out, { raw: { width: W, height: H, channels: 4 } })
+    .extract({ left: s.x0, top: s.y0, width: s.x1 - s.x0 + 1, height: s.y1 - s.y0 + 1 })
     .png()
     .toBuffer();
-
-  // Sharp runs trim before extract in one pipeline, so crop and trim separately.
-  const cropped = await sharp(ringless)
-    .extract({ left: 0, top: 0, width: info.width, height: Math.round(meta.height * 0.58) })
-    .png()
-    .toBuffer();
-
-  return sharp(cropped).trim({ threshold: 1 }).png().toBuffer();
 }
 
 /** Navy rounded-square app icons plus a multi-size .ico. */
 async function buildFavicons(markLight) {
-  const NAVY = "#0e1a3f";
+  const NAVY = "#011460";
   const icon = async (size, radiusRatio = 0.22) => {
     const pad = Math.round(size * 0.16);
     const art = await sharp(markLight)
@@ -199,25 +237,28 @@ function buildIco(frames) {
 
 /** Default 1200x630 Open Graph card on the brand navy. */
 async function buildSocialCard(lockupLight) {
-  const art = await sharp(lockupLight).resize({ height: 380 }).toBuffer();
+  const art = await sharp(lockupLight).resize({ width: 760 }).toBuffer();
+  const { width, height } = await sharp(art).metadata();
+
   const bg = Buffer.from(
     `<svg width="1200" height="630">
       <defs>
         <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#0b1430"/>
-          <stop offset="55%" stop-color="#12224e"/>
-          <stop offset="100%" stop-color="#0b1430"/>
+          <stop offset="0%" stop-color="#010c37"/>
+          <stop offset="55%" stop-color="#03186d"/>
+          <stop offset="100%" stop-color="#010c37"/>
         </linearGradient>
       </defs>
       <rect width="1200" height="630" fill="url(#g)"/>
-      <rect x="0" y="0" width="1200" height="6" fill="#c09a2e"/>
-      <rect x="0" y="624" width="1200" height="6" fill="#c09a2e"/>
-      <text x="600" y="560" font-family="Georgia, serif" font-size="30" letter-spacing="6"
-            fill="#c9a961" text-anchor="middle">WEB • APPS • MARKETING • GROWTH</text>
+      <rect x="0" y="0" width="1200" height="6" fill="#b58726"/>
+      <rect x="0" y="624" width="1200" height="6" fill="#b58726"/>
     </svg>`
   );
+
+  // The lockup carries "The Business Pooling Network" itself, so the card does
+  // not set a second tagline underneath it.
   await sharp(bg)
-    .composite([{ input: art, top: 90, left: Math.round((1200 - (await sharp(art).metadata()).width) / 2) }])
+    .composite([{ input: art, top: Math.round((630 - height) / 2), left: Math.round((1200 - width) / 2) }])
     .png()
     .toFile(path.join(BRAND_DIR, "og-default.png"));
   console.log("wrote og-default.png");

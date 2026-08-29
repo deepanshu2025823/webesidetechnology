@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 /**
  * Compact header lockup: the crown mark beside a typeset wordmark.
  *
- * The supplied logo is a circular badge with the company name set inside it,
- * which becomes unreadable below about 90px. Pairing the mark with live type
- * keeps the brand legible in a 64–80px header while using the same colours.
+ * The supplied logo is a wide lockup carrying the name and the tagline, so at a
+ * 64–80px header height its tagline is unreadable. Pairing the swash S with
+ * live type keeps the brand legible at that size while using the same colours.
  */
 export function Wordmark({
   mark,
@@ -38,7 +38,7 @@ export function Wordmark({
         src={mark}
         alt=""
         width={512}
-        height={303}
+        height={666}
         priority
         className={cn("w-auto object-contain transition-transform group-hover:scale-105", compact ? "h-7" : "h-9")}
       />

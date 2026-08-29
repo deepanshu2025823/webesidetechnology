@@ -16,7 +16,7 @@ export default async function PortalLoginPage() {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(55% 50% at 78% 12%, rgba(180,140,36,0.34), transparent 60%), radial-gradient(48% 48% at 6% 92%, rgba(61,84,144,0.42), transparent 62%)",
+              "radial-gradient(55% 50% at 78% 12%, rgba(181,135,38,0.34), transparent 60%), radial-gradient(48% 48% at 6% 92%, rgba(36,66,188,0.42), transparent 62%)",
           }}
         />
         <div aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-gold-700 via-gold-400 to-gold-700" />
@@ -25,7 +25,7 @@ export default async function PortalLoginPage() {
             src="/brand/logo-light.png"
             alt={settings.siteName}
             width={1024}
-            height={1043}
+            height={390}
             priority
             className="h-24 w-auto self-start"
           />
@@ -51,7 +51,7 @@ export default async function PortalLoginPage() {
             src="/brand/logo.png"
             alt={settings.siteName}
             width={1024}
-            height={1043}
+            height={390}
             priority
             className="mx-auto h-24 w-auto lg:hidden"
           />

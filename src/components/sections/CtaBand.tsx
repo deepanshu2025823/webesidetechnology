@@ -23,7 +23,7 @@ export function CtaBand({
         className="absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(50% 120% at 50% 0%, rgba(180,140,36,0.28), transparent 65%)",
+            "radial-gradient(50% 120% at 50% 0%, rgba(181,135,38,0.28), transparent 65%)",
         }}
       />
       <Container>
