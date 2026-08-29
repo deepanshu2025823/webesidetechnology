@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import type { Role } from "@/generated/prisma/enums";
 import { can, canView, isOwnScoped, type Access, type ModuleKey } from "@/lib/permissions";
 
-const COOKIE = "webeside_admin";
+const COOKIE = "sahab_admin";
 const MAX_AGE = 60 * 60 * 8; // 8 hours
 
 export type SessionUser = {

@@ -19,7 +19,7 @@ type SeoInput = {
 export async function buildMetadata(input: SeoInput = {}): Promise<Metadata> {
   const settings = await getSettings();
 
-  const siteName = settings.siteName || "Webeside Technology";
+  const siteName = settings.siteName || "Sahab India";
 
   // Titles are built here rather than through Next's `%s` template so a page
   // whose meta title already names the brand is not suffixed twice.

@@ -30,7 +30,7 @@ for (const path of PATHS) {
   for (const [label, width, height] of VIEWPORTS) {
     const page = await browser.newPage();
     if (process.env.ADMIN_COOKIE) {
-      await page.setCookie({ name: "webeside_admin", value: process.env.ADMIN_COOKIE, domain: "localhost", path: "/" });
+      await page.setCookie({ name: "sahab_admin", value: process.env.ADMIN_COOKIE, domain: "localhost", path: "/" });
     }
     const errors = [];
     page.on("console", (m) => m.type() === "error" && errors.push(m.text().slice(0, 160)));

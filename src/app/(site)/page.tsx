@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { buttonClass } from "@/components/ui/Button";
 import { Hero, type Slide } from "@/components/sections/Hero";
 import { LogoMarquee } from "@/components/sections/LogoMarquee";
+import { BrandPhilosophy } from "@/components/sections/BrandPhilosophy";
 import { ServiceGrid } from "@/components/sections/ServiceGrid";
 import { ProcessTimeline } from "@/components/sections/ProcessTimeline";
 import { Testimonials } from "@/components/sections/Testimonials";
@@ -102,6 +103,9 @@ export default async function HomePage() {
 
       <LogoMarquee logos={logos} title="Trusted by growing brands" />
 
+      {/* Brand philosophy --------------------------------------------- */}
+      <BrandPhilosophy />
+
       {/* Services ------------------------------------------------------ */}
       {services.length ? (
         <section className="py-20 sm:py-24">
@@ -156,7 +160,7 @@ export default async function HomePage() {
 
             <div>
               <SectionHeading
-                eyebrow="Why Webeside"
+                eyebrow="Why Sahab India"
                 title="An agency that behaves like your in-house team"
                 description="No handoffs between vendors, no finger-pointing when a campaign underperforms. Strategy, build and growth sit in one place, with one plan and one report."
               />

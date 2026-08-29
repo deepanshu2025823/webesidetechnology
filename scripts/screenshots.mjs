@@ -23,7 +23,7 @@ for (const target of process.argv.slice(2)) {
   const page = await browser.newPage();
   await page.setViewport({ width, height, deviceScaleFactor: 1 });
   if (COOKIE) {
-    await page.setCookie({ name: "webeside_admin", value: COOKIE, domain: "localhost", path: "/" });
+    await page.setCookie({ name: "sahab_admin", value: COOKIE, domain: "localhost", path: "/" });
   }
   await page.goto(`${BASE}${urlPath}`, { waitUntil: "networkidle0", timeout: 60000 });
 

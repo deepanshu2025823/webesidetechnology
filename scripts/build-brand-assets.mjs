@@ -1,5 +1,5 @@
 /**
- * Turns the supplied Webeside Technology logo (gold + navy on a solid light
+ * Turns the supplied Sahab India logo (gold + navy on a solid light
  * background) into transparent PNG variants and the favicon set.
  *
  * The source is an AVIF export with a warm off-white backdrop, so the key

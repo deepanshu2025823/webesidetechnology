@@ -2,9 +2,9 @@
 @plugin "@tailwindcss/typography";
 
 /*
- * Brand palette sampled directly from the client logo:
- *   gold  #b48c24  (crown + WEBESIDE wordmark)
- *   navy  #0f1a3c  (WB monogram + TECHNOLOGY wordmark)
+ * Brand palette sampled directly from the client logo artwork:
+ *   gold  #b48c24  (crown + wordmark)
+ *   navy  #0f1a3c  (monogram + descender wordmark)
  */
 @theme {
   --color-navy-50: #f2f4f9;
@@ -146,4 +146,171 @@
 .scroll-slim::-webkit-scrollbar-thumb {
   background: color-mix(in oklab, var(--color-navy-900) 20%, transparent);
   border-radius: 999px;
+}
+
+/* ------------------------------------------------------------------------
+ * Brand philosophy section (client-supplied design).
+ * The "A" of BRAND is a rig: pendant lamp, light cone and a chess king on a
+ * lit pedestal. Sizing is em-based so the whole rig tracks the headline clamp.
+ * ---------------------------------------------------------------------- */
+.bp {
+  --bp-hair: #e4d9be;
+  --bp-gold: var(--color-gold-500);
+  --bp-gold-light: var(--color-gold-300);
+  --bp-navy: var(--color-navy-900);
+}
+
+.bp-eyebrow { font-size: clamp(1.2rem, 2.2vw, 1.55rem); line-height: 1.25; }
+
+.bp-headline {
+  font-size: clamp(3.4rem, 10vw, 7.8rem);
+  line-height: 0.86;
+  letter-spacing: -0.01em;
+  display: flex;
+  white-space: nowrap;
+}
+
+.bp-word { font-size: clamp(2.1rem, 5.5vw, 3.6rem); line-height: 1; }
+
+/* --- the A-slot rig ----------------------------------------------------
+ * Centring uses inset + auto margins rather than translateX(-50%), because
+ * .bp-reveal owns `transform` on these same elements and would clobber it.
+ * -------------------------------------------------------------------- */
+.bp-a-slot {
+  position: relative;
+  width: 0.66em;
+  display: inline-flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.bp-a-slot > * {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+}
+
+.bp-cord {
+  top: -64px;
+  width: 1px; height: 64px;
+  background: var(--bp-navy);
+  transform-origin: top center;
+}
+
+.bp-shade {
+  top: -8px;
+  width: 22px; height: 12px;
+  background: var(--bp-navy);
+  border-radius: 3px 3px 0 0;
+  z-index: 3;
+}
+
+.bp-bulb {
+  top: 2px;
+  width: 6px; height: 6px;
+  background: var(--bp-gold-light);
+  border-radius: 50%;
+  box-shadow: 0 0 12px 4px rgb(232 199 106 / 0.9);
+  z-index: 3;
+}
+
+.bp-cone {
+  top: 4px;
+  width: 100%; height: 100%;
+  transform-origin: top center;
+  clip-path: polygon(48% 0%, 52% 0%, 92% 100%, 8% 100%);
+  background: linear-gradient(
+    180deg,
+    rgb(232 199 106 / 0.55) 0%,
+    rgb(201 154 43 / 0.28) 55%,
+    rgb(201 154 43 / 0) 100%
+  );
+  z-index: 1;
+}
+
+.bp-pedestal {
+  bottom: 0;
+  width: 46%; height: 10px;
+  background: radial-gradient(ellipse at center, rgb(201 154 43 / 0.55) 0%, rgb(201 154 43 / 0) 70%);
+  z-index: 0;
+}
+
+.bp-king {
+  bottom: 6%;
+  width: 34%;
+  fill: var(--bp-gold);
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.35));
+  z-index: 2;
+}
+
+/* --- panel + connectors ------------------------------------------------ */
+.bp-panel-label {
+  position: absolute; top: -0.875rem; left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-cream);
+  padding-inline: 1.125rem;
+  white-space: nowrap;
+}
+
+.bp-arrow {
+  width: 200px; max-width: 40vw; height: 1px;
+  background: var(--bp-navy);
+  position: relative;
+  transform-origin: left;
+}
+.bp-arrow::after {
+  content: "";
+  position: absolute; right: -1px; top: 50%;
+  width: 8px; height: 8px;
+  border-right: 1.5px solid var(--bp-navy);
+  border-bottom: 1.5px solid var(--bp-navy);
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+.bp-hair { background: var(--bp-hair); }
+
+.bp-footer-rule { position: relative; height: 1px; background: var(--bp-hair); }
+.bp-footer-rule::after {
+  content: "";
+  position: absolute; left: 50%; top: 50%;
+  width: 8px; height: 8px;
+  background: var(--bp-gold);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* --- scroll reveal (stagger driven by an inline --bp-delay) ------------- */
+.bp-reveal {
+  opacity: 0;
+  transform: translateY(var(--bp-shift, 16px));
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1) var(--bp-delay, 0s),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) var(--bp-delay, 0s);
+}
+.bp-scale { transform: scale(0.4); }
+.bp-grow-x { transform: scaleX(0); }
+.bp-grow-y { transform: scaleY(0); }
+
+.bp-in .bp-reveal { opacity: 1; transform: none; }
+
+@media (max-width: 1024px) {
+  .bp-cord { top: -52px; height: 52px; }
+}
+
+@media (max-width: 640px) {
+  .bp-headline { font-size: clamp(2.6rem, 15vw, 4.2rem); }
+  .bp-eyebrow { font-size: clamp(1rem, 4vw, 1.3rem); }
+  .bp-cord { top: -40px; height: 40px; }
+  .bp-shade { top: -6px; width: 16px; height: 9px; }
+  .bp-bulb { width: 5px; height: 5px; }
+  .bp-arrow { max-width: 55vw; }
+}
+
+@media (max-width: 380px) {
+  .bp-headline { font-size: clamp(2.1rem, 15vw, 3.2rem); }
+  .bp-word { font-size: 1.7rem; }
+}
+
+@media (prefers-reduced-motion: reduce), (scripting: none) {
+  .bp-reveal { opacity: 1; transform: none; transition: none; }
 }

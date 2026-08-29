@@ -9,15 +9,15 @@ import { prisma } from "@/lib/prisma";
 
 export const DEFAULT_SETTINGS = {
   id: 1,
-  siteName: "Webeside Technology",
+  siteName: "Sahab India",
   tagline: "Web • Apps • Marketing • Growth",
   description:
-    "Webeside Technology is a full-service IT and digital marketing agency building websites, apps and campaigns that grow revenue.",
+    "Sahab India is a full-service IT and digital marketing agency building websites, apps and campaigns that grow revenue.",
   logoLight: "/brand/logo.png",
   logoDark: "/brand/logo-light.png",
   logoMark: "/brand/logo-mark-light.png",
   ogImage: "/brand/og-default.png",
-  email: "info@webesidetechnology.com",
+  email: "info@sahabindia.com",
   altEmail: "",
   phone: "",
   altPhone: "",

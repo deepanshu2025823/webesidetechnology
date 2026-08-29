@@ -1,5 +1,5 @@
 /**
- * Seeds Webeside Technology's site content: an admin login, site settings,
+ * Seeds Sahab India's site content: an admin login, site settings,
  * navigation, and the full service catalogue with the delivery workflows from
  * the project scope document.
  *
@@ -21,14 +21,14 @@ const feature = (title: string, description: string) => ({ title, description })
 
 async function main() {
   // ---------------------------------------------------------------- admin user
-  const email = (process.env.SEED_ADMIN_EMAIL ?? "admin@webesidetechnology.com").toLowerCase();
-  const password = process.env.SEED_ADMIN_PASSWORD ?? "Webeside@2026";
+  const email = (process.env.SEED_ADMIN_EMAIL ?? "admin@sahabindia.com").toLowerCase();
+  const password = process.env.SEED_ADMIN_PASSWORD ?? "SahabIndia@2026";
 
   const admin = await prisma.user.upsert({
     where: { email },
     update: { role: "SUPER_ADMIN", isActive: true },
     create: {
-      name: "Webeside Admin",
+      name: "Sahab India Admin",
       email,
       passwordHash: await bcrypt.hash(password, 12),
       role: "SUPER_ADMIN",
@@ -38,16 +38,16 @@ async function main() {
 
   // ---------------------------------------------------------------- settings
   const settings = {
-    siteName: "Webeside Technology",
+    siteName: "Sahab India",
     tagline: "Web • Apps • Marketing • Growth",
     description:
-      "Webeside Technology is a full-service IT and digital marketing agency. We build websites, portals and mobile apps, then run the SEO, social and paid campaigns that turn them into pipeline.",
+      "Sahab India is a full-service IT and digital marketing agency. We build websites, portals and mobile apps, then run the SEO, social and paid campaigns that turn them into pipeline.",
     logoLight: "/brand/logo.png",
     logoDark: "/brand/logo-light.png",
     logoMark: "/brand/logo-mark-light.png",
     ogImage: "/brand/og-default.png",
-    email: "info@webesidetechnology.com",
-    altEmail: "sales@webesidetechnology.com",
+    email: "info@sahabindia.com",
+    altEmail: "sales@sahabindia.com",
     phone: "+91 98765 43210",
     altPhone: "",
     whatsapp: "+919876543210",
@@ -58,9 +58,9 @@ async function main() {
     country: "India",
     mapEmbedUrl: "",
     workingHours: "Mon – Sat, 10:00 – 19:00 IST",
-    facebook: "https://facebook.com/webesidetechnology",
-    instagram: "https://instagram.com/webesidetechnology",
-    linkedin: "https://linkedin.com/company/webesidetechnology",
+    facebook: "https://facebook.com/sahabindia",
+    instagram: "https://instagram.com/sahabindia",
+    linkedin: "https://linkedin.com/company/sahabindia",
     twitter: "",
     youtube: "",
     footerAbout:
@@ -70,7 +70,7 @@ async function main() {
       "Tell us the goal. We'll come back with an approach, a timeline and an honest price — usually within one working day.",
     ctaButton: "Book a free consultation",
     ctaUrl: "/contact",
-    metaTitle: "Webeside Technology — IT & Digital Marketing Agency in Noida",
+    metaTitle: "Sahab India — IT & Digital Marketing Agency in Noida",
     metaDescription:
       "Website and app development, web portals, SEO, social media, Meta and Google Ads, PR, events and business communication services — delivered by one accountable team.",
     metaKeywords:
@@ -164,7 +164,7 @@ async function main() {
         "Source code & documentation",
         "30 days post-launch support",
       ],
-      metaTitle: "Web Development Company in Noida | Webeside Technology",
+      metaTitle: "Web Development Company in Noida | Sahab India",
       metaDescription:
         "Custom website development for businesses — corporate sites, e-commerce and landing pages. Fast, secure, SEO-ready and fully manageable by your own team.",
       metaKeywords: "web development company, website design noida, ecommerce development, custom website",
@@ -211,7 +211,7 @@ async function main() {
         "Source code handover",
         "Post-launch support window",
       ],
-      metaTitle: "Mobile App Development Company | Android & iOS | Webeside Technology",
+      metaTitle: "Mobile App Development Company | Android & iOS | Sahab India",
       metaDescription:
         "Android and iOS app development from requirement to store release — module-based scope, sprint delivery, QA, UAT and ongoing maintenance.",
       metaKeywords: "mobile app development, android app development, ios app development company",
@@ -258,7 +258,7 @@ async function main() {
         "Deployment and data migration",
         "Team training",
       ],
-      metaTitle: "Custom Software & Web Portal Development | Webeside Technology",
+      metaTitle: "Custom Software & Web Portal Development | Sahab India",
       metaDescription:
         "Custom web portals, CRMs, dashboards and internal tools — requirement gathering, functional scope, milestone delivery, UAT and support.",
       metaKeywords: "custom software development, web portal development, crm development company",
@@ -305,7 +305,7 @@ async function main() {
         "Backlink and outreach record",
         "Monthly rankings & traffic report",
       ],
-      metaTitle: "SEO Services & Agency in Noida | Webeside Technology",
+      metaTitle: "SEO Services & Agency in Noida | Sahab India",
       metaDescription:
         "Monthly SEO retainers covering technical fixes, keyword strategy, on-page, content and off-page work — with transparent rankings and traffic reporting.",
       metaKeywords: "seo services, seo company noida, local seo, technical seo agency",
@@ -446,7 +446,7 @@ async function main() {
         "Landing page recommendations",
         "Monthly performance report",
       ],
-      metaTitle: "Google Ads Management Agency | PPC Services | Webeside Technology",
+      metaTitle: "Google Ads Management Agency | PPC Services | Sahab India",
       metaDescription:
         "Google Ads management — keyword planning, campaign setup, conversion tracking, weekly optimisation and clear reporting on spend, leads and CPA.",
       metaKeywords: "google ads agency, ppc management company, google ads management services",
@@ -492,7 +492,7 @@ async function main() {
         "Coverage tracking",
         "Clipping report",
       ],
-      metaTitle: "PR Agency & Public Relations Services | Webeside Technology",
+      metaTitle: "PR Agency & Public Relations Services | Sahab India",
       metaDescription:
         "Public relations services — PR strategy, media lists, press releases, journalist outreach, publication tracking and coverage reporting.",
       metaKeywords: "pr agency, public relations services, press release distribution india",
@@ -539,7 +539,7 @@ async function main() {
         "On-ground execution",
         "Post-event report with leads",
       ],
-      metaTitle: "Event Marketing & Management Company | Webeside Technology",
+      metaTitle: "Event Marketing & Management Company | Sahab India",
       metaDescription:
         "End-to-end event marketing and management — planning, budgets, vendors, sponsors, promotion, registrations, execution and post-event reporting.",
       metaKeywords: "event management company, event marketing agency, corporate event planners",
@@ -586,7 +586,7 @@ async function main() {
         "Publishing on your site",
         "Monthly performance report",
       ],
-      metaTitle: "Blog Writing & Content Marketing Services | Webeside Technology",
+      metaTitle: "Blog Writing & Content Marketing Services | Sahab India",
       metaDescription:
         "SEO blog writing and content marketing — keyword briefs, specialist writers, editorial QC, client approval, publishing and performance reporting.",
       metaKeywords: "blog writing services, content marketing agency, seo content writing india",
@@ -680,7 +680,7 @@ async function main() {
         "Delivery and read reporting",
         "Wallet and usage monitoring",
       ],
-      metaTitle: "WhatsApp Business API Services & Bulk Campaigns | Webeside Technology",
+      metaTitle: "WhatsApp Business API Services & Bulk Campaigns | Sahab India",
       metaDescription:
         "Official Meta WhatsApp Business API — verification, template approval, bulk campaigns, automated notifications and delivery reporting.",
       metaKeywords: "whatsapp business api provider, bulk whatsapp marketing, whatsapp api integration",
@@ -726,7 +726,7 @@ async function main() {
         "Delivery reports",
         "Usage and billing summary",
       ],
-      metaTitle: "Bulk SMS Services & Transactional SMS API | Webeside Technology",
+      metaTitle: "Bulk SMS Services & Transactional SMS API | Sahab India",
       metaDescription:
         "Bulk SMS and transactional SMS services — DLT and sender ID registration, template approval, campaign management and delivery reporting.",
       metaKeywords: "bulk sms services, transactional sms api, sms marketing company india",
@@ -773,7 +773,7 @@ async function main() {
         "Call logs and recordings",
         "Monthly call reports",
       ],
-      metaTitle: "IVR Solutions & Toll-Free Number Services | Webeside Technology",
+      metaTitle: "IVR Solutions & Toll-Free Number Services | Sahab India",
       metaDescription:
         "IVR call-flow design, professional prompts, virtual and toll-free numbers, CRM integration, call logs and reporting.",
       metaKeywords: "ivr solutions, toll free number provider, ivr service provider india",
@@ -1060,13 +1060,13 @@ async function main() {
       heroImage: IMG("page-about"),
       heroTitle: "One team for technology and growth",
       heroSubtitle:
-        "We started Webeside Technology because businesses were stitching together a web developer, an SEO freelancer and an ads agency who never spoke to each other.",
+        "We started Sahab India because businesses were stitching together a web developer, an SEO freelancer and an ads agency who never spoke to each other.",
       content:
-        "<h2>Who we are</h2><p>Webeside Technology is a full-service IT and digital marketing agency. We design and build websites, web portals and mobile apps, then run the search, social and paid campaigns that bring people to them.</p><p>The work sits under one roof for a reason. When the developer, the SEO lead and the ads manager sit in the same review, problems get solved instead of forwarded.</p><h2>How we work</h2><p>Every engagement starts with a written scope: objectives, inclusions, exclusions, assumptions, deliverables and acceptance criteria. Every project has a named owner, dated milestones and a health status you can see. Every retainer ends the month with a report.</p><h2>What we will not do</h2><p>We will not lock you into hosting you cannot leave, run ads from an account you do not own, or keep a channel alive because it is billable. If something is not working, you will hear it from us first.</p>",
-      metaTitle: "About Webeside Technology | IT & Digital Marketing Agency",
+        "<h2>Who we are</h2><p>Sahab India is a full-service IT and digital marketing agency. We design and build websites, web portals and mobile apps, then run the search, social and paid campaigns that bring people to them.</p><p>The work sits under one roof for a reason. When the developer, the SEO lead and the ads manager sit in the same review, problems get solved instead of forwarded.</p><h2>How we work</h2><p>Every engagement starts with a written scope: objectives, inclusions, exclusions, assumptions, deliverables and acceptance criteria. Every project has a named owner, dated milestones and a health status you can see. Every retainer ends the month with a report.</p><h2>What we will not do</h2><p>We will not lock you into hosting you cannot leave, run ads from an account you do not own, or keep a channel alive because it is billable. If something is not working, you will hear it from us first.</p>",
+      metaTitle: "About Sahab India | IT & Digital Marketing Agency",
       metaDescription:
-        "Webeside Technology is a full-service IT and digital marketing agency delivering websites, apps, portals, SEO, social media, paid ads, PR and events.",
-      metaKeywords: "about webeside technology, digital marketing agency noida, it company india",
+        "Sahab India is a full-service IT and digital marketing agency delivering websites, apps, portals, SEO, social media, paid ads, PR and events.",
+      metaKeywords: "about sahab india, digital marketing agency noida, it company india",
     },
     {
       slug: "privacy-policy",
@@ -1076,7 +1076,7 @@ async function main() {
       content:
         "<h2>Information we collect</h2><p>We collect the details you submit through our enquiry and newsletter forms — name, email address, phone number, company name and the message you send. We also collect standard technical data such as your IP address and browser type.</p><h2>How we use it</h2><p>Your information is used to respond to your enquiry, to provide the services you engage us for, and — where you have opted in — to send occasional updates. We do not sell your data.</p><h2>Cookies and analytics</h2><p>We use cookies and analytics tools to understand how visitors use the site so we can improve it. You can disable cookies in your browser settings.</p><h2>Data retention</h2><p>Enquiry records are retained for as long as needed to serve you and to meet our legal obligations, after which they are deleted.</p><h2>Your rights</h2><p>You can ask us for a copy of the personal data we hold about you, ask us to correct it, or ask us to delete it. Write to us using the contact details on this website.</p><h2>Changes to this policy</h2><p>We may update this policy from time to time. The current version is always published on this page.</p>",
       metaTitle: "Privacy Policy",
-      metaDescription: "How Webeside Technology collects, uses, stores and protects your personal information.",
+      metaDescription: "How Sahab India collects, uses, stores and protects your personal information.",
       metaKeywords: "",
       showInSitemap: true,
     },
@@ -1088,7 +1088,7 @@ async function main() {
       content:
         "<h2>Use of this website</h2><p>The content on this site is provided for general information. We take care to keep it accurate but make no warranty that it is complete or current at all times.</p><h2>Engagements and scope</h2><p>All work is delivered against a written scope and quotation. Deliverables, timelines and exclusions are those set out in the approved quotation. Changes to scope are handled through a change request showing the impact on cost and timeline.</p><h2>Payments</h2><p>Payment terms are stated on each quotation and invoice. Recurring services such as retainers, hosting, domains and subscriptions are billed for the period stated and renew unless cancelled in writing before the renewal date.</p><h2>Third-party costs</h2><p>Charges from third parties — advertising platforms, hosting and domain providers, messaging and API vendors, payment gateways — are separate from our fees unless a proposal explicitly includes them.</p><h2>Intellectual property</h2><p>On full payment, ownership of the deliverables created specifically for you transfers to you. Pre-existing tools, libraries and frameworks remain the property of their respective owners.</p><h2>Limitation of liability</h2><p>Our liability in connection with any engagement is limited to the fees paid for the service in question.</p><h2>Governing law</h2><p>These terms are governed by the laws of India.</p>",
       metaTitle: "Terms & Conditions",
-      metaDescription: "The terms and conditions that apply to Webeside Technology's website and services.",
+      metaDescription: "The terms and conditions that apply to Sahab India's website and services.",
       metaKeywords: "",
       showInSitemap: true,
     },
@@ -1223,7 +1223,7 @@ async function main() {
       isFeatured: true,
       order: 1,
       services: ["web-portals-custom-software", "whatsapp-business-api"],
-      metaTitle: "Case Study: Logistics Operations Portal | Webeside Technology",
+      metaTitle: "Case Study: Logistics Operations Portal | Sahab India",
       metaDescription:
         "How a custom operations portal replaced four spreadsheets for a logistics company, cutting invoicing time by 70% and tracking every consignment.",
       metaKeywords: "logistics portal case study, custom software case study",

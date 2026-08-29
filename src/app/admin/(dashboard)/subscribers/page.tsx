@@ -18,7 +18,7 @@ export default async function SubscribersPage() {
           subscribers.length ? (
             <a
               href={csvHref}
-              download="webeside-subscribers.csv"
+              download="sahab-india-subscribers.csv"
               className="rounded-xl border border-navy-900/15 px-4 py-2.5 text-sm font-semibold text-navy-800 transition-colors hover:border-gold-500 hover:bg-gold-50"
             >
               Export CSV

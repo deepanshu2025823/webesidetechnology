@@ -40,7 +40,7 @@ export default async function AboutPage() {
         title={page?.heroTitle || "One team for technology and growth"}
         description={
           page?.heroSubtitle ||
-          "We started Webeside Technology because businesses were stitching together a web developer, an SEO freelancer and an ads agency who never spoke to each other. We put all of it under one roof, with one plan."
+          "We started Sahab India because businesses were stitching together a web developer, an SEO freelancer and an ads agency who never spoke to each other. We put all of it under one roof, with one plan."
         }
         crumbs={[{ name: "About", path: "/about" }]}
         image={page?.heroImage}

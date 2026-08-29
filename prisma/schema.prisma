@@ -1,4 +1,4 @@
-// Webeside Technology - website + admin panel data model.
+// Sahab India - website + admin panel data model.
 // TiDB Cloud speaks the MySQL protocol; referential integrity is enforced by
 // Prisma rather than database-level foreign keys, which TiDB handles best.
 
@@ -133,7 +133,7 @@ model ActivityLog {
 model SiteSettings {
   id Int @id @default(1)
 
-  siteName    String  @default("Webeside Technology") @db.VarChar(160)
+  siteName    String  @default("Sahab India") @db.VarChar(160)
   tagline     String  @default("Web • Apps • Marketing • Growth") @db.VarChar(240)
   description String @db.Text
   logoLight   String  @default("/brand/logo.png") @db.VarChar(500)

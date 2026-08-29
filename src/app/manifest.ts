@@ -6,7 +6,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
 
   return {
     name: s.siteName,
-    short_name: "Webeside",
+    short_name: "Sahab India",
     description: s.description || s.tagline,
     start_url: "/",
     display: "standalone",

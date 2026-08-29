@@ -29,7 +29,7 @@ export function SeoFields({
           <Search className="size-3.5" aria-hidden />
           Preview
         </div>
-        <p className="mt-3 truncate text-xs text-emerald-700">webesidetechnology.com{path}</p>
+        <p className="mt-3 truncate text-xs text-emerald-700">sahabindia.com{path}</p>
         <p className="mt-1 line-clamp-1 text-lg text-[#1a0dab]">{shownTitle}</p>
         <p className="mt-1 line-clamp-2 text-sm text-slate-600">{shownDescription}</p>
       </div>

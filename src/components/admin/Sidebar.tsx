@@ -172,7 +172,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
   return (
     <>
       <div className="sticky top-0 z-40 flex items-center justify-between border-b border-navy-900/10 bg-navy-950 px-4 py-3 lg:hidden">
-        <Image src="/brand/logo-mark-light.png" alt="Webeside Technology" width={512} height={303} className="h-8 w-auto" />
+        <Image src="/brand/logo-mark-light.png" alt="Sahab India" width={512} height={303} className="h-8 w-auto" />
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
@@ -193,7 +193,7 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
           <Link href="/admin" className="flex items-center gap-3">
             <Image src="/brand/logo-mark-light.png" alt="" width={512} height={303} className="h-8 w-auto" />
             <span className="flex flex-col leading-none">
-              <span className="font-display text-base font-semibold tracking-wide text-gold-400">Webeside</span>
+              <span className="font-display text-base font-semibold tracking-wide text-gold-400">Sahab India</span>
               <span className="mt-1 text-[0.6rem] font-medium uppercase tracking-[0.28em] text-navy-300">
                 Admin panel
               </span>

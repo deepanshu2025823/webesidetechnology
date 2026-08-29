@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
  * Agency staff and client contacts can never be mistaken for one another,
  * which matters because the portal exposes invoices and approvals.
  */
-const COOKIE = "webeside_portal";
+const COOKIE = "sahab_portal";
 const MAX_AGE = 60 * 60 * 12;
 
 export type PortalSession = {

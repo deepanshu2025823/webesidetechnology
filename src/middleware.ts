@@ -53,7 +53,7 @@ export async function middleware(request: NextRequest) {
 
   if (pathname === "/admin/login") return NextResponse.next();
 
-  const token = request.cookies.get("webeside_admin")?.value;
+  const token = request.cookies.get("sahab_admin")?.value;
   const loginUrl = new URL("/admin/login", request.url);
 
   if (!token) return NextResponse.redirect(loginUrl);

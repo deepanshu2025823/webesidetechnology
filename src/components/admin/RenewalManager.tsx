@@ -91,7 +91,7 @@ export function RenewalManager({
               {state.error ? <Alert tone="error">{state.error}</Alert> : null}
 
               <div className="grid gap-3 sm:grid-cols-12">
-                <input name="name" required placeholder="e.g. webesidetechnology.com" className={`${inputClass} sm:col-span-5`} />
+                <input name="name" required placeholder="e.g. sahabindia.com" className={`${inputClass} sm:col-span-5`} />
                 <select name="type" defaultValue="DOMAIN" className={`${inputClass} sm:col-span-3`} aria-label="Type">
                   {TYPES.map(([v, l]) => (
                     <option key={v} value={v}>

@@ -1,4 +1,4 @@
-# Webeside Technology — website & admin panel
+# Sahab India — website & admin panel
 
 Two things in one Next.js app:
 
