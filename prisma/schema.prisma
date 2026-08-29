@@ -548,6 +548,11 @@ model Media {
   url          String   @db.VarChar(500)
   mimeType     String   @db.VarChar(120)
   size         Int
+  // Serverless hosts give each invocation a fresh read-only filesystem, so an
+  // uploaded file written to disk is lost and never served. Bytes live here and
+  // are streamed back by /api/media/[id]. Null for the stock images that ship
+  // in public/uploads and for anything pasted in as an external URL.
+  data         Bytes?   @db.LongBlob
   width        Int?
   height       Int?
   alt          String   @default("") @db.VarChar(300)

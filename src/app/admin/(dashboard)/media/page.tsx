@@ -5,7 +5,16 @@ import { MediaUploader } from "@/components/admin/MediaUploader";
 import { formatDate } from "@/lib/utils";
 
 export default async function MediaPage() {
-  const media = await prisma.media.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
+  // `data` holds the file bytes, so the listing must never select it - without
+  // this the grid would pull every blob on the page into memory.
+  const media = await prisma.media.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    select: {
+      id: true, filename: true, url: true, alt: true,
+      width: true, height: true, size: true, createdAt: true,
+    },
+  });
 
   return (
     <>
