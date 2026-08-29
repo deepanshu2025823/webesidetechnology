@@ -47,7 +47,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       </a>
       <Header
         nav={nav}
-        logoMark={settings.logoMark}
+        logo={settings.logoDark}
         siteName={settings.siteName}
         phone={settings.phone}
         ctaLabel={settings.ctaButton}

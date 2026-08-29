@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, Phone, X } from "lucide-react";
 import { Container } from "@/components/ui/Container";
-import { Wordmark } from "@/components/site/Wordmark";
+import { Logo } from "@/components/site/Logo";
 import { buttonClass } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -19,14 +19,15 @@ export type NavNode = {
 
 export function Header({
   nav,
-  logoMark,
+  logo,
   siteName,
   phone,
   ctaLabel,
   ctaUrl,
 }: {
   nav: NavNode[];
-  logoMark: string;
+  /** Full lockup for a dark surface; the header sizes it by height. */
+  logo: string;
   siteName: string;
   phone: string;
   ctaLabel: string;
@@ -72,7 +73,7 @@ export function Header({
       <div className="h-0.5 w-full bg-gradient-to-r from-gold-700 via-gold-400 to-gold-700" />
       <Container size="wide">
         <div className={cn("flex items-center justify-between transition-all", scrolled ? "h-16" : "h-20")}>
-          <Wordmark mark={logoMark} siteName={siteName} compact={scrolled} />
+          <Logo src={logo} siteName={siteName} height={scrolled ? 40 : 50} priority />
 
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
             {nav.map((item) =>
