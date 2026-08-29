@@ -1,0 +1,468 @@
+/**
+ * Declarative definitions for the "simple" content types in the admin panel.
+ * One definition drives the list table, the create/edit form, validation and
+ * the server action, so adding a new managed collection is a data change.
+ */
+
+export type FieldType =
+  | "text"
+  | "textarea"
+  | "richtext"
+  | "number"
+  | "boolean"
+  | "select"
+  | "image"
+  | "url"
+  | "email"
+  | "date"
+  | "icon"
+  /// string[] stored in a Json column
+  | "taglist";
+
+export type Field = {
+  name: string;
+  label: string;
+  type: FieldType;
+  required?: boolean;
+  help?: string;
+  placeholder?: string;
+  options?: { value: string; label: string }[];
+  /** Show this column in the list table. */
+  inList?: boolean;
+  defaultValue?: string | number | boolean;
+  colSpan?: 1 | 2;
+};
+
+export type Collection = {
+  /** Prisma model key on the client, e.g. `testimonial`. */
+  model: string;
+  slug: string;
+  /** Permission module that gates this collection; defaults to "website". */
+  module?: string;
+  title: string;
+  singular: string;
+  description: string;
+  fields: Field[];
+  orderBy?: Record<string, "asc" | "desc">;
+  /** Field rendered as the row's primary label. */
+  titleField: string;
+  sortable?: boolean;
+};
+
+const ORDER_FIELD: Field = {
+  name: "order",
+  label: "Sort order",
+  type: "number",
+  defaultValue: 0,
+  help: "Lower numbers appear first.",
+};
+
+const ACTIVE_FIELD: Field = {
+  name: "isActive",
+  label: "Visible on the site",
+  type: "boolean",
+  defaultValue: true,
+  inList: true,
+};
+
+export const COLLECTIONS: Record<string, Collection> = {
+  "hero": {
+    model: "heroSlide",
+    slug: "hero",
+    title: "Hero slides",
+    singular: "Slide",
+    description: "The rotating headline block at the top of the home page.",
+    titleField: "title",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "eyebrow", label: "Eyebrow", type: "text", placeholder: "Full-service digital partner", colSpan: 2 },
+      { name: "title", label: "Headline", type: "text", required: true, colSpan: 2, inList: true },
+      { name: "subtitle", label: "Sub-headline", type: "textarea", colSpan: 2 },
+      { name: "image", label: "Background image", type: "image", colSpan: 2, help: "Optional. Falls back to the brand mark." },
+      { name: "ctaLabel", label: "Primary button text", type: "text", placeholder: "Book a free consultation" },
+      { name: "ctaUrl", label: "Primary button link", type: "url", placeholder: "/contact" },
+      { name: "altLabel", label: "Secondary button text", type: "text", placeholder: "Our services" },
+      { name: "altUrl", label: "Secondary button link", type: "url", placeholder: "/services" },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "stats": {
+    model: "stat",
+    slug: "stats",
+    title: "Stats",
+    singular: "Stat",
+    description: "Headline numbers shown on the home and about pages.",
+    titleField: "label",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "value", label: "Value", type: "text", required: true, placeholder: "250", inList: true },
+      { name: "suffix", label: "Suffix", type: "text", placeholder: "+", help: "e.g. +, %, k" },
+      { name: "label", label: "Label", type: "text", required: true, placeholder: "Projects delivered", inList: true },
+      { name: "icon", label: "Icon", type: "icon", defaultValue: "TrendingUp" },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "process": {
+    model: "processStep",
+    slug: "process",
+    title: "Process steps",
+    singular: "Step",
+    description: "The 'how we work' timeline on the home and about pages.",
+    titleField: "title",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "title", label: "Step title", type: "text", required: true, inList: true },
+      { name: "description", label: "Description", type: "textarea", colSpan: 2 },
+      { name: "icon", label: "Icon", type: "icon", defaultValue: "Compass" },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "testimonials": {
+    model: "testimonial",
+    slug: "testimonials",
+    title: "Testimonials",
+    singular: "Testimonial",
+    description: "Client quotes used across the site.",
+    titleField: "authorName",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "quote", label: "Quote", type: "textarea", required: true, colSpan: 2 },
+      { name: "authorName", label: "Client name", type: "text", required: true, inList: true },
+      { name: "authorRole", label: "Designation", type: "text", placeholder: "Founder" },
+      { name: "company", label: "Company", type: "text", inList: true },
+      {
+        name: "rating",
+        label: "Rating",
+        type: "select",
+        defaultValue: 5,
+        options: [5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: `${n} star${n > 1 ? "s" : ""}` })),
+      },
+      { name: "avatar", label: "Photo", type: "image", colSpan: 2 },
+      { name: "isFeatured", label: "Feature on home page", type: "boolean", defaultValue: false },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "client-logos": {
+    model: "clientLogo",
+    slug: "client-logos",
+    title: "Client logos",
+    singular: "Client logo",
+    description: "The logo strip beneath the hero.",
+    titleField: "name",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "name", label: "Client name", type: "text", required: true, inList: true },
+      { name: "logo", label: "Logo", type: "image", required: true, colSpan: 2, help: "Transparent PNG or SVG works best." },
+      { name: "websiteUrl", label: "Website", type: "url", colSpan: 2 },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "faqs": {
+    model: "faq",
+    slug: "faqs",
+    title: "FAQs",
+    singular: "FAQ",
+    description: "Questions shown on the home page and, optionally, a service page.",
+    titleField: "question",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "question", label: "Question", type: "text", required: true, colSpan: 2, inList: true },
+      { name: "answer", label: "Answer", type: "textarea", required: true, colSpan: 2 },
+      { name: "group", label: "Group", type: "text", defaultValue: "General", inList: true, help: "Use 'General' for the home page." },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "team": {
+    model: "teamMember",
+    slug: "team",
+    title: "Team",
+    singular: "Team member",
+    description: "People shown on the about page.",
+    titleField: "name",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "name", label: "Name", type: "text", required: true, inList: true },
+      { name: "role", label: "Designation", type: "text", required: true, inList: true },
+      { name: "bio", label: "Short bio", type: "textarea", colSpan: 2 },
+      { name: "photo", label: "Photo", type: "image", colSpan: 2 },
+      { name: "linkedin", label: "LinkedIn URL", type: "url" },
+      { name: "email", label: "Email", type: "email" },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "service-categories": {
+    model: "serviceCategory",
+    slug: "service-categories",
+    title: "Service groups",
+    singular: "Service group",
+    description: "Groupings used to organise the services page.",
+    titleField: "name",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "name", label: "Group name", type: "text", required: true, inList: true },
+      { name: "slug", label: "URL slug", type: "text", required: true, inList: true, help: "Auto-filled from the name." },
+      { name: "description", label: "Description", type: "textarea", colSpan: 2 },
+      { name: "icon", label: "Icon", type: "icon", defaultValue: "Sparkles" },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "post-categories": {
+    model: "postCategory",
+    slug: "post-categories",
+    title: "Blog categories",
+    singular: "Category",
+    description: "Categories used to file blog posts.",
+    titleField: "name",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "name", label: "Name", type: "text", required: true, inList: true },
+      { name: "slug", label: "URL slug", type: "text", required: true, inList: true },
+      { name: "description", label: "Description", type: "textarea", colSpan: 2 },
+      ORDER_FIELD,
+    ],
+  },
+
+  "menus": {
+    model: "menuItem",
+    slug: "menus",
+    title: "Navigation",
+    singular: "Menu link",
+    description: "Header, footer and legal navigation links.",
+    titleField: "label",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "label", label: "Link text", type: "text", required: true, inList: true },
+      { name: "url", label: "URL", type: "url", required: true, inList: true, placeholder: "/services" },
+      {
+        name: "location",
+        label: "Where it appears",
+        type: "select",
+        defaultValue: "HEADER",
+        inList: true,
+        options: [
+          { value: "HEADER", label: "Header" },
+          { value: "FOOTER_SERVICES", label: "Footer — Services" },
+          { value: "FOOTER_COMPANY", label: "Footer — Company" },
+          { value: "LEGAL", label: "Footer — Legal strip" },
+        ],
+      },
+      {
+        name: "parentId",
+        label: "Parent link",
+        type: "select",
+        help: "Leave blank for a top-level link. Only header links support dropdowns.",
+        options: [],
+      },
+      { name: "isExternal", label: "Opens in a new tab", type: "boolean", defaultValue: false },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  // ---------------------------------------------------------------- people
+
+  "hr/employees": {
+    model: "employee",
+    slug: "hr/employees",
+    title: "Employees",
+    singular: "Employee",
+    description: "The HR record for each team member — department, skills and reporting line.",
+    titleField: "name",
+    orderBy: { name: "asc" },
+    module: "team",
+    fields: [
+      { name: "name", label: "Full name", type: "text", required: true, inList: true },
+      { name: "code", label: "Employee code", type: "text", required: true, inList: true, placeholder: "EMP-001" },
+      { name: "email", label: "Email", type: "email", required: true, inList: true },
+      { name: "phone", label: "Phone", type: "text" },
+      { name: "department", label: "Department", type: "text", inList: true, placeholder: "Delivery" },
+      { name: "designation", label: "Designation", type: "text", placeholder: "Senior Developer" },
+      { name: "skills", label: "Skills", type: "taglist", colSpan: 2, placeholder: "e.g. React" },
+      { name: "joinedAt", label: "Joined on", type: "date" },
+      { name: "exitedAt", label: "Exit date", type: "date", help: "Leave blank while they are with you." },
+      { name: "isActive", label: "Currently employed", type: "boolean", defaultValue: true, inList: true },
+    ],
+  },
+
+  // ---------------------------------------------------------------- growth network
+
+  "influencers": {
+    model: "influencer",
+    slug: "influencers",
+    title: "Influencers",
+    singular: "Influencer",
+    description: "The influencer master database — reach, rates, compliance and internal rating.",
+    titleField: "name",
+    orderBy: { name: "asc" },
+    module: "influencers",
+    fields: [
+      { name: "name", label: "Name", type: "text", required: true, inList: true },
+      { name: "handle", label: "Handle", type: "text", inList: true, placeholder: "@handle" },
+      { name: "platforms", label: "Platforms", type: "taglist", colSpan: 2, placeholder: "e.g. Instagram", inList: true },
+      { name: "niche", label: "Niche", type: "text", inList: true, placeholder: "Fitness" },
+      { name: "category", label: "Category", type: "text", placeholder: "Nano / Micro / Macro" },
+      { name: "language", label: "Language", type: "text" },
+      { name: "city", label: "City", type: "text" },
+      { name: "audienceType", label: "Audience type", type: "text", placeholder: "18–34, urban" },
+      { name: "audienceGeo", label: "Audience geography", type: "text" },
+      { name: "followers", label: "Followers", type: "number", inList: true },
+      { name: "avgViews", label: "Average views", type: "number" },
+      { name: "engagementRate", label: "Engagement rate %", type: "number" },
+      { name: "agencyContact", label: "Agency / contact", type: "text", colSpan: 2 },
+      { name: "barterOk", label: "Accepts barter", type: "boolean", defaultValue: false },
+      {
+        name: "rating",
+        label: "Overall rating",
+        type: "select",
+        defaultValue: 3,
+        options: [5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: `${n} / 5` })),
+      },
+      {
+        name: "reliability",
+        label: "Reliability",
+        type: "select",
+        defaultValue: 3,
+        options: [5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: `${n} / 5` })),
+      },
+      {
+        name: "contentQuality",
+        label: "Content quality",
+        type: "select",
+        defaultValue: 3,
+        options: [5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: `${n} / 5` })),
+      },
+      {
+        name: "brandFit",
+        label: "Brand fit",
+        type: "select",
+        defaultValue: 3,
+        options: [5, 4, 3, 2, 1].map((n) => ({ value: String(n), label: `${n} / 5` })),
+      },
+      { name: "contractUrl", label: "Contract link", type: "text", colSpan: 2 },
+      { name: "usageRights", label: "Usage rights", type: "textarea", colSpan: 2 },
+      { name: "disclosureNote", label: "Disclosure requirements", type: "textarea", colSpan: 2 },
+      { name: "taxRef", label: "PAN / tax reference", type: "text" },
+      { name: "notes", label: "Notes", type: "textarea", colSpan: 2 },
+    ],
+  },
+
+  "media-contacts": {
+    model: "mediaContact",
+    slug: "media-contacts",
+    title: "Media contacts",
+    singular: "Journalist",
+    description: "Reporters and publications used when pitching PR stories.",
+    titleField: "name",
+    orderBy: { name: "asc" },
+    module: "campaigns",
+    fields: [
+      { name: "name", label: "Name", type: "text", required: true, inList: true },
+      { name: "publication", label: "Publication", type: "text", inList: true },
+      { name: "beat", label: "Beat", type: "text", inList: true, placeholder: "Technology" },
+      { name: "email", label: "Email", type: "email" },
+      { name: "phone", label: "Phone", type: "text" },
+      { name: "city", label: "City", type: "text" },
+      { name: "notes", label: "Notes", type: "textarea", colSpan: 2 },
+    ],
+  },
+
+  "reward-rules": {
+    model: "rewardRule",
+    slug: "reward-rules",
+    title: "Reward rules",
+    singular: "Reward rule",
+    description: "How referral commission is calculated, and when it becomes payable.",
+    titleField: "name",
+    orderBy: { name: "asc" },
+    module: "partners",
+    fields: [
+      { name: "name", label: "Rule name", type: "text", required: true, inList: true },
+      {
+        name: "type",
+        label: "Calculation",
+        type: "select",
+        defaultValue: "PERCENTAGE",
+        inList: true,
+        options: [
+          { value: "PERCENTAGE", label: "Percentage of deal" },
+          { value: "FIXED", label: "Fixed amount" },
+          { value: "SLAB", label: "Slab based" },
+        ],
+      },
+      { name: "value", label: "Value", type: "number", inList: true, help: "Percentage, or rupees for a fixed reward." },
+      {
+        name: "triggerOn",
+        label: "Payable when",
+        type: "select",
+        defaultValue: "INVOICE_PAID",
+        inList: true,
+        options: [
+          { value: "INVOICE_PAID", label: "The invoice is paid" },
+          { value: "DEAL_WON", label: "The deal is won" },
+        ],
+      },
+      { name: "isActive", label: "Active", type: "boolean", defaultValue: true, inList: true },
+    ],
+  },
+
+  "message-templates": {
+    model: "messageTemplate",
+    slug: "message-templates",
+    title: "Message templates",
+    singular: "Template",
+    description: "Reusable email, WhatsApp and SMS copy. Use {{placeholders}} for values.",
+    titleField: "name",
+    orderBy: { key: "asc" },
+    module: "integrations",
+    fields: [
+      { name: "name", label: "Template name", type: "text", required: true, inList: true },
+      { name: "key", label: "Key", type: "text", required: true, inList: true, help: "Referenced in code, e.g. renewal_reminder." },
+      {
+        name: "channel",
+        label: "Channel",
+        type: "select",
+        defaultValue: "EMAIL",
+        inList: true,
+        options: [
+          { value: "EMAIL", label: "Email" },
+          { value: "WHATSAPP", label: "WhatsApp" },
+          { value: "SMS", label: "SMS" },
+        ],
+      },
+      { name: "subject", label: "Subject", type: "text", colSpan: 2 },
+      { name: "body", label: "Body", type: "textarea", required: true, colSpan: 2 },
+      { name: "providerTemplateId", label: "Provider template id", type: "text", help: "Required for approved WhatsApp templates." },
+      { name: "isActive", label: "Active", type: "boolean", defaultValue: true, inList: true },
+    ],
+  },
+};
+
+export function getCollection(slug: string): Collection | undefined {
+  return COLLECTIONS[slug];
+}
