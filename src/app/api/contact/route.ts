@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { sendEnquiryNotification } from "@/lib/mailer";
+import { alertNewLead } from "@/lib/alerts";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
@@ -46,8 +46,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Thanks — we'll be in touch shortly." });
   }
 
+  let enquiryId: string;
   try {
-    await prisma.enquiry.create({
+    const created = await prisma.enquiry.create({
       data: {
         name: data.name,
         email: data.email.toLowerCase(),
@@ -62,21 +63,14 @@ export async function POST(request: Request) {
         userAgent: request.headers.get("user-agent")?.slice(0, 400) ?? "",
       },
     });
+    enquiryId = created.id;
   } catch (error) {
     console.error("[contact] could not save enquiry", error);
     return NextResponse.json({ error: "We could not save your message. Please call us instead." }, { status: 500 });
   }
 
-  await sendEnquiryNotification({
-    name: data.name,
-    email: data.email,
-    phone: data.phone,
-    company: data.company,
-    serviceInterest: data.serviceInterest,
-    budget: data.budget,
-    message: data.message,
-    pageUrl: data.pageUrl,
-  });
+  // Notifies the bell and the official mailboxes; never throws.
+  await alertNewLead(enquiryId);
 
   return NextResponse.json({ message: "Thanks — we'll be in touch within one working day." });
 }

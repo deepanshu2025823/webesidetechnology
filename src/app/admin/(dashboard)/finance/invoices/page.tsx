@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
+import { DataTools } from "@/components/admin/DataTools";
 import { cn, formatDate, formatMoney } from "@/lib/utils";
 
 const TONE = {
@@ -21,15 +22,31 @@ const pretty = (v: string) => v.charAt(0) + v.slice(1).toLowerCase().replace(/_/
 export default async function InvoicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; client?: string }>;
+  searchParams: Promise<{ status?: string; client?: string; q?: string; from?: string; to?: string }>;
 }) {
   const session = await requireModule("finance");
-  const { status, client } = await searchParams;
+  const { status, client, q, from, to } = await searchParams;
+
+  const term = q?.trim();
+  const end = to ? new Date(to) : undefined;
+  if (end) end.setHours(23, 59, 59, 999);
 
   const invoices = await prisma.invoice.findMany({
     where: {
       ...(status && status !== "ALL" ? { status: status as never } : {}),
       ...(client ? { clientId: client } : {}),
+      ...(term
+        ? {
+            OR: [
+              { number: { contains: term } },
+              { title: { contains: term } },
+              { client: { name: { contains: term } } },
+            ],
+          }
+        : {}),
+      ...(from || end
+        ? { issueDate: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } }
+        : {}),
     },
     orderBy: { issueDate: "desc" },
     include: { client: { select: { id: true, name: true } } },
@@ -38,6 +55,14 @@ export default async function InvoicesPage({
   const editable = canEdit(session.role, "finance");
   const total = invoices.reduce((sum, i) => sum + i.total, 0);
   const due = invoices.reduce((sum, i) => sum + (i.total - i.amountPaid), 0);
+
+  /** Status links keep whatever search, client and dates are applied. */
+  const statusHref = (next: string) => {
+    const params = new URLSearchParams();
+    if (next !== "ALL") params.set("status", next);
+    for (const [key, value] of Object.entries({ client, q, from, to })) if (value) params.set(key, value);
+    return params.size ? `/admin/finance/invoices?${params}` : "/admin/finance/invoices";
+  };
 
   return (
     <>
@@ -56,11 +81,14 @@ export default async function InvoicesPage({
         }
       />
 
+      {/* Status chips below already filter by status. */}
+      <DataTools dataset="invoices" statuses={false} />
+
       <nav className="mb-5 flex flex-wrap gap-2">
         {STATUSES.map((s) => (
           <Link
             key={s}
-            href={s === "ALL" ? "/admin/finance/invoices" : `/admin/finance/invoices?status=${s}`}
+            href={statusHref(s)}
             className={cn(
               "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
               (status ?? "ALL") === s

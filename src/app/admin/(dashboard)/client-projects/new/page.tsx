@@ -16,7 +16,7 @@ export default async function NewClientProjectPage({
   const [clients, services, managers] = await Promise.all([
     prisma.client.findMany({ select: { id: true, name: true, code: true }, orderBy: { name: "asc" } }),
     prisma.service.findMany({ select: { id: true, title: true }, orderBy: { order: "asc" } }),
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
   ]);
 
   return (

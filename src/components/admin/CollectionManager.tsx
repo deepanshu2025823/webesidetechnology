@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import Image from "next/image";
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { deleteCollectionItem, saveCollectionItem, type ActionState } from "@/app/admin/actions/collections";
 import { Alert, Badge, EmptyState, FieldWrap, PageHeader, SubmitButton, Toggle, inputClass } from "@/components/admin/ui";
 import { ImageInput } from "@/components/admin/ImageInput";
@@ -19,18 +19,35 @@ export function CollectionManager({
   rows,
   dynamicOptions = {},
   readOnly = false,
+  tools,
 }: {
   collection: Collection;
   rows: Row[];
   dynamicOptions?: Record<string, { value: string; label: string }[]>;
   readOnly?: boolean;
+  /** Import / export / report controls, for collections that register a dataset. */
+  tools?: React.ReactNode;
 }) {
   const [editing, setEditing] = useState<Row | null>(null);
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState("");
+  const [query, setQuery] = useState("");
 
   const open = creating || editing !== null;
   const listFields = collection.fields.filter((f) => f.inList);
+
+  // Collections are fully loaded already, so searching them is a client-side
+  // filter across every stored value — no round trip, and it matches on fields
+  // that are not shown as columns too.
+  const term = query.trim().toLowerCase();
+  const visible = term
+    ? rows.filter((row) =>
+        Object.values(row).some((value) => {
+          if (value === null || value === undefined || typeof value === "object") return false;
+          return String(value).toLowerCase().includes(term);
+        }),
+      )
+    : rows;
 
   return (
     <>
@@ -60,6 +77,22 @@ export function CollectionManager({
         </div>
       ) : null}
 
+      {tools}
+
+      {rows.length > 5 ? (
+        <div className="relative mb-5 max-w-sm">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={`Search ${collection.title.toLowerCase()}…`}
+            aria-label={`Search ${collection.title.toLowerCase()}`}
+            className={cn(inputClass, "pl-10")}
+          />
+        </div>
+      ) : null}
+
       {rows.length === 0 ? (
         <EmptyState
           title={`No ${collection.title.toLowerCase()} yet`}
@@ -74,6 +107,20 @@ export function CollectionManager({
                 <Plus className="size-4" /> Add the first one
               </button>
             )
+          }
+        />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          title={`Nothing matches “${query.trim()}”`}
+          description="Try a shorter search."
+          action={
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="rounded-xl border border-navy-900/15 px-4 py-2.5 text-sm font-medium text-navy-800 hover:bg-slate-50"
+            >
+              Clear search
+            </button>
           }
         />
       ) : (
@@ -92,7 +139,7 @@ export function CollectionManager({
                 </tr>
               </thead>
               <tbody className="divide-y divide-navy-900/5">
-                {rows.map((row, i) => (
+                {visible.map((row, i) => (
                   <tr key={row.id} className="hover:bg-slate-50/70">
                     <td className="px-5 py-3.5 text-xs text-slate-400">{i + 1}</td>
                     {listFields.map((f) => (

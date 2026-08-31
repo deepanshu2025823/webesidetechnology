@@ -4,22 +4,42 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
-import { cn, formatDate } from "@/lib/utils";
+import { DataTools } from "@/components/admin/DataTools";
+import { formatDate } from "@/lib/utils";
 
 const STATUS_TONE = { PROSPECT: "warn", ACTIVE: "success", ON_HOLD: "neutral", CHURNED: "muted" } as const;
 
 export default async function ClientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; from?: string; to?: string }>;
 }) {
   const session = await requireModule("clients");
-  const { status, q } = await searchParams;
+  const { status, q, from, to } = await searchParams;
+
+  const term = q?.trim();
+  const end = to ? new Date(to) : undefined;
+  if (end) end.setHours(23, 59, 59, 999);
 
   const clients = await prisma.client.findMany({
     where: {
       ...(status && status !== "ALL" ? { status: status as never } : {}),
-      ...(q ? { name: { contains: q } } : {}),
+      ...(term
+        ? {
+            OR: [
+              { name: { contains: term } },
+              { code: { contains: term } },
+              { industry: { contains: term } },
+              { city: { contains: term } },
+              { gstin: { contains: term } },
+              { website: { contains: term } },
+              { contacts: { some: { OR: [{ name: { contains: term } }, { email: { contains: term } }] } } },
+            ],
+          }
+        : {}),
+      ...(from || end
+        ? { createdAt: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } }
+        : {}),
     },
     orderBy: { createdAt: "desc" },
     include: {
@@ -29,7 +49,6 @@ export default async function ClientsPage({
     },
   });
 
-  const filters = ["ALL", "PROSPECT", "ACTIVE", "ON_HOLD", "CHURNED"];
   const editable = canEdit(session.role, "clients");
 
   return (
@@ -49,36 +68,16 @@ export default async function ClientsPage({
         }
       />
 
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        {filters.map((f) => (
-          <Link
-            key={f}
-            href={f === "ALL" ? "/admin/clients" : `/admin/clients?status=${f}`}
-            className={cn(
-              "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
-              (status ?? "ALL") === f
-                ? "bg-navy-900 text-white"
-                : "border border-navy-900/15 text-navy-700 hover:border-gold-500 hover:bg-gold-50",
-            )}
-          >
-            {f === "ON_HOLD" ? "On hold" : f.charAt(0) + f.slice(1).toLowerCase()}
-          </Link>
-        ))}
-
-        <form className="ml-auto" action="/admin/clients">
-          <input
-            name="q"
-            defaultValue={q ?? ""}
-            placeholder="Search companies…"
-            className="w-56 rounded-full border border-navy-900/15 px-4 py-1.5 text-sm focus:border-gold-500 focus:outline-none"
-          />
-        </form>
-      </div>
+      <DataTools dataset="clients" />
 
       {clients.length === 0 ? (
         <EmptyState
-          title="No clients yet"
-          description="Add a client directly, or convert a qualified lead from the Leads page."
+          title={term ? `Nothing matches “${term}”` : "No clients yet"}
+          description={
+            term
+              ? "Try a shorter search, or clear the filters above."
+              : "Add a client directly, or convert a qualified lead from the Leads page."
+          }
           action={
             editable ? (
               <Link href="/admin/clients/new" className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">

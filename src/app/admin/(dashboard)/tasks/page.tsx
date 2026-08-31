@@ -4,15 +4,20 @@ import { requireModule } from "@/lib/auth";
 import { canEdit, isOwnScoped } from "@/lib/permissions";
 import { EmptyState, PageHeader } from "@/components/admin/ui";
 import { TaskBoard } from "@/components/admin/TaskBoard";
+import { DataTools } from "@/components/admin/DataTools";
 import { cn } from "@/lib/utils";
 
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ scope?: string; project?: string }>;
+  searchParams: Promise<{ scope?: string; project?: string; q?: string; status?: string; from?: string; to?: string }>;
 }) {
   const session = await requireModule("tasks");
-  const { scope, project } = await searchParams;
+  const { scope, project, q, status, from, to } = await searchParams;
+
+  const term = q?.trim();
+  const end = to ? new Date(to) : undefined;
+  if (end) end.setHours(23, 59, 59, 999);
 
   // Team members are always limited to their own work, whatever the filter says.
   const forced = isOwnScoped(session.role, "tasks");
@@ -23,6 +28,19 @@ export default async function TasksPage({
       where: {
         ...(mine ? { assigneeId: session.id } : {}),
         ...(project ? { projectId: project } : {}),
+        ...(status && status !== "ALL" ? { status: status as never } : {}),
+        ...(term
+          ? {
+              OR: [
+                { title: { contains: term } },
+                { description: { contains: term } },
+                { project: { name: { contains: term } } },
+              ],
+            }
+          : {}),
+        ...(from || end
+          ? { dueDate: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } }
+          : {}),
       },
       orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
       take: 300,
@@ -54,6 +72,8 @@ export default async function TasksPage({
             : `${open} open task${open === 1 ? "" : "s"}.`
         }
       />
+
+      <DataTools dataset="tasks" />
 
       <div className="mb-5 flex flex-wrap items-center gap-2">
         {!forced ? (

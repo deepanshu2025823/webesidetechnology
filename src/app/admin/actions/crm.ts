@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { logActivity, requirePermission } from "@/lib/auth";
+import { alertNewClient, alertNewLead } from "@/lib/alerts";
 import { nextCode } from "@/lib/admin/sequence";
 import type { Prisma } from "@/generated/prisma/client";
 import type { ActionState } from "@/app/admin/actions/collections";
@@ -67,6 +68,7 @@ export async function saveClient(_prev: ActionState, form: FormData): Promise<Ac
     } else {
       const created = await prisma.client.create({ data: { ...data, code: await nextCode("client") } });
       clientId = created.id;
+      await alertNewClient(clientId, session.name);
     }
   } catch (error) {
     console.error("[crm] saveClient", error);
@@ -152,6 +154,55 @@ export async function addClientActivity(clientId: string, form: FormData): Promi
 }
 
 // ------------------------------------------------------------------ leads
+
+/**
+ * Create a lead by hand — a walk-in, a phone call, a referral.
+ *
+ * Mirrors the website form's shape so a manually added lead is indistinguishable
+ * from a captured one downstream, and fires the same alerts.
+ */
+export async function createLead(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const session = await requirePermission("leads", "write");
+
+  const name = str(form, "name");
+  const email = str(form, "email").toLowerCase();
+  const phone = str(form, "phone");
+
+  if (!name) return { error: "The lead's name is required." };
+  if (!email && !phone) return { error: "Add an email address or a phone number so the lead can be followed up." };
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { error: "That email address does not look right." };
+
+  let leadId: string;
+  try {
+    const created = await prisma.enquiry.create({
+      data: {
+        name,
+        email,
+        phone,
+        company: str(form, "company"),
+        serviceInterest: str(form, "serviceInterest"),
+        budget: str(form, "budget"),
+        message: str(form, "message") || "Added from the admin panel.",
+        source: str(form, "source") || "manual",
+        status: (str(form, "status") || "NEW") as never,
+        ownerId: nullable(form, "ownerId"),
+        score: Math.max(0, Math.min(100, int(form, "score"))),
+        nextFollowUpAt: date(form, "nextFollowUpAt"),
+        // Someone in the team typed it, so it has already been seen.
+        isRead: true,
+      },
+    });
+    leadId = created.id;
+  } catch (error) {
+    console.error("[crm] createLead", error);
+    return { error: "Could not save this lead." };
+  }
+
+  await alertNewLead(leadId);
+  await logActivity(session.id, "create", "Lead", leadId, name);
+  revalidatePath("/admin/leads");
+  redirect(`/admin/leads/${leadId}`);
+}
 
 export async function updateLead(id: string, form: FormData): Promise<void> {
   await requirePermission("leads", "write");

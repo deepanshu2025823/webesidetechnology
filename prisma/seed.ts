@@ -70,6 +70,10 @@ async function main() {
       "Tell us the goal. We'll come back with an approach, a timeline and an honest price — usually within one working day.",
     ctaButton: "Book a free consultation",
     ctaUrl: "/contact",
+    videoEnabled: true,
+    videoTitle: "Work in motion",
+    videoSubtitle: "Campaigns, launches and builds — a few minutes of what we actually ship.",
+    videoPerRow: 3,
     metaTitle: "Sahab India — IT & Digital Marketing Agency in Noida",
     metaDescription:
       "Website and app development, web portals, SEO, social media, Meta and Google Ads, PR, events and business communication services — delivered by one accountable team.",

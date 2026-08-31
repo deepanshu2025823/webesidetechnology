@@ -5,6 +5,7 @@ import { MessageSquare, Plus, Trash2 } from "lucide-react";
 import { addContentComment, deleteContentItem, saveContentItem, setContentStage } from "@/app/admin/actions/campaigns";
 import { Badge, inputClass } from "@/components/admin/ui";
 import { cn, formatDate } from "@/lib/utils";
+import { personLabel, type Person } from "@/components/admin/people";
 
 export type ContentCard = {
   id: string;
@@ -42,7 +43,7 @@ export function ContentBoard({
 }: {
   planId: string;
   items: ContentCard[];
-  owners: { id: string; name: string }[];
+  owners: Person[];
   editable: boolean;
 }) {
   const [, startTransition] = useTransition();
@@ -73,7 +74,7 @@ export function ContentBoard({
             <option value="">Owner</option>
             {owners.map((o) => (
               <option key={o.id} value={o.id}>
-                {o.name}
+                {personLabel(o)}
               </option>
             ))}
           </select>

@@ -14,6 +14,7 @@ import { FaqAccordion } from "@/components/sections/FaqAccordion";
 import { ProjectCard } from "@/components/sections/ProjectCard";
 import { PostCard } from "@/components/sections/PostCard";
 import { CtaBand } from "@/components/sections/CtaBand";
+import { VideoCarousel } from "@/components/sections/VideoCarousel";
 import { JsonLd } from "@/components/JsonLd";
 import {
   getClientLogos,
@@ -26,6 +27,7 @@ import {
   getSettings,
   getStats,
   getTestimonials,
+  getVideoSlides,
 } from "@/lib/queries";
 import { buildMetadata } from "@/lib/seo";
 
@@ -41,18 +43,20 @@ const PROMISES = [
 ];
 
 export default async function HomePage() {
-  const [settings, slides, logos, services, stats, steps, projects, testimonials, posts, faqs] = await Promise.all([
-    getSettings(),
-    getHeroSlides(),
-    getClientLogos(),
-    getServices({ featuredOnly: true, take: 6 }),
-    getStats(),
-    getProcessSteps(),
-    getProjects({ featuredOnly: true, take: 3 }),
-    getTestimonials({ take: 6 }),
-    getPosts({ take: 3 }),
-    getFaqs("General"),
-  ]);
+  const [settings, slides, logos, services, stats, steps, projects, testimonials, posts, faqs, videos] =
+    await Promise.all([
+      getSettings(),
+      getHeroSlides(),
+      getClientLogos(),
+      getServices({ featuredOnly: true, take: 6 }),
+      getStats(),
+      getProcessSteps(),
+      getProjects({ featuredOnly: true, take: 3 }),
+      getTestimonials({ take: 6 }),
+      getPosts({ take: 3 }),
+      getFaqs("General"),
+      getVideoSlides(),
+    ]);
 
   const heroSlides: Slide[] = slides.length
     ? slides.map((s) => ({
@@ -105,6 +109,22 @@ export default async function HomePage() {
 
       {/* Brand philosophy --------------------------------------------- */}
       <BrandPhilosophy />
+
+      {/* Video carousel ------------------------------------------------ */}
+      {settings.videoEnabled && videos.length ? (
+        <VideoCarousel
+          items={videos.map((v) => ({
+            id: v.id,
+            title: v.title,
+            description: v.description,
+            url: v.url,
+            thumbnail: v.thumbnail,
+          }))}
+          title={settings.videoTitle}
+          subtitle={settings.videoSubtitle}
+          perRow={settings.videoPerRow}
+        />
+      ) : null}
 
       {/* Services ------------------------------------------------------ */}
       {services.length ? (

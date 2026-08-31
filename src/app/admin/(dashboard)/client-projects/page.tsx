@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { canEdit, isOwnScoped } from "@/lib/permissions";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
+import { DataTools } from "@/components/admin/DataTools";
 import { cn, formatDate, formatMoney } from "@/lib/utils";
 
 const HEALTH_TONE = { ON_TRACK: "success", AT_RISK: "warn", DELAYED: "muted" } as const;
@@ -12,10 +13,14 @@ const STAGES = ["ALL", "PLANNED", "ACTIVE", "ON_HOLD", "COMPLETED", "CANCELLED"]
 export default async function ClientProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string }>;
+  searchParams: Promise<{ stage?: string; q?: string; from?: string; to?: string }>;
 }) {
   const session = await requireModule("projects");
-  const { stage } = await searchParams;
+  const { stage, q, from, to } = await searchParams;
+
+  const term = q?.trim();
+  const end = to ? new Date(to) : undefined;
+  if (end) end.setHours(23, 59, 59, 999);
 
   // Team members only see projects they are actually on.
   const ownOnly = isOwnScoped(session.role, "projects");
@@ -23,6 +28,18 @@ export default async function ClientProjectsPage({
   const projects = await prisma.clientProject.findMany({
     where: {
       ...(stage && stage !== "ALL" ? { stage: stage as never } : {}),
+      ...(term
+        ? {
+            OR: [
+              { name: { contains: term } },
+              { code: { contains: term } },
+              { client: { name: { contains: term } } },
+            ],
+          }
+        : {}),
+      ...(from || end
+        ? { createdAt: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } }
+        : {}),
       ...(ownOnly
         ? {
             OR: [
@@ -42,6 +59,14 @@ export default async function ClientProjectsPage({
   });
 
   const editable = canEdit(session.role, "projects");
+
+  /** Stage links keep whatever search and dates are already applied. */
+  const stageHref = (next: string) => {
+    const params = new URLSearchParams();
+    if (next !== "ALL") params.set("stage", next);
+    for (const [key, value] of Object.entries({ q, from, to })) if (value) params.set(key, value);
+    return params.size ? `/admin/client-projects?${params}` : "/admin/client-projects";
+  };
 
   return (
     <>
@@ -64,11 +89,14 @@ export default async function ClientProjectsPage({
         }
       />
 
+      {/* Stage chips below already filter by stage. */}
+      <DataTools dataset="client-projects" statuses={false} />
+
       <nav className="mb-5 flex flex-wrap gap-2">
         {STAGES.map((s) => (
           <Link
             key={s}
-            href={s === "ALL" ? "/admin/client-projects" : `/admin/client-projects?stage=${s}`}
+            href={stageHref(s)}
             className={cn(
               "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
               (stage ?? "ALL") === s

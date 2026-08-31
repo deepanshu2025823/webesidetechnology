@@ -14,7 +14,7 @@ export default async function EditQuotationPage({ params }: { params: Promise<{ 
     prisma.quotation.findUnique({ where: { id }, include: { items: { orderBy: { order: "asc" } } } }),
     prisma.client.findMany({ select: { id: true, name: true, code: true }, orderBy: { name: "asc" } }),
     prisma.service.findMany({ select: { id: true, title: true, priceFrom: true }, orderBy: { order: "asc" } }),
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
   ]);
   if (!quotation) notFound();
 

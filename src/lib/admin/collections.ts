@@ -89,6 +89,40 @@ export const COLLECTIONS: Record<string, Collection> = {
     ],
   },
 
+  "videos": {
+    model: "videoSlide",
+    slug: "videos",
+    title: "Video carousel",
+    singular: "Video",
+    description:
+      "The video strip on the home page. Paste a YouTube, Vimeo or direct video link — title and description are optional.",
+    titleField: "title",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      {
+        name: "url",
+        label: "Video link",
+        type: "url",
+        required: true,
+        colSpan: 2,
+        placeholder: "https://youtu.be/…",
+        help: "A YouTube or Vimeo link, or a direct .mp4 URL. Videos are not uploaded to the site itself.",
+      },
+      { name: "title", label: "Title", type: "text", colSpan: 2, inList: true, help: "Optional." },
+      { name: "description", label: "Description", type: "textarea", colSpan: 2, help: "Optional." },
+      {
+        name: "thumbnail",
+        label: "Custom thumbnail",
+        type: "image",
+        colSpan: 2,
+        help: "Optional. YouTube and Vimeo supply their own poster if this is left blank.",
+      },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
   "stats": {
     model: "stat",
     slug: "stats",

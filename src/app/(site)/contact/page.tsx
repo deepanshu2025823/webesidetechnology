@@ -1,4 +1,5 @@
-import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { ArrowRight, Calculator, Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { PageHero } from "@/components/site/PageHero";
 import { ContactForm } from "@/components/site/ContactForm";
@@ -108,6 +109,23 @@ export default async function ContactPage() {
                 <p className="mt-2 text-sm text-slate-600">Fields marked * are required.</p>
                 <ContactForm className="mt-7" services={services.map((s) => s.title)} />
               </div>
+
+              {/* Anyone who only wants a number can self-serve instead of waiting. */}
+              <Link
+                href="/cost-calculator"
+                className="mt-5 flex items-center gap-4 rounded-2xl border border-navy-900/10 bg-white px-6 py-5 transition-colors hover:border-gold-500 hover:bg-gold-50/40"
+              >
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-navy-900 text-gold-400">
+                  <Calculator className="size-5" aria-hidden />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium text-navy-900">Just want a ballpark figure?</span>
+                  <span className="block text-sm text-slate-600">
+                    Price it yourself with our project cost calculator — takes a minute.
+                  </span>
+                </span>
+                <ArrowRight className="size-5 shrink-0 text-gold-600" aria-hidden />
+              </Link>
             </div>
           </div>
         </Container>

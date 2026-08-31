@@ -33,7 +33,7 @@ export default async function SeoPlanPage({ params }: { params: Promise<{ id: st
 
   const assignees = await prisma.user.findMany({
     where: { isActive: true },
-    select: { id: true, name: true },
+    select: { id: true, name: true, role: true },
     orderBy: { name: "asc" },
   });
 

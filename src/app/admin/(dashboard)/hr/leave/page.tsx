@@ -3,17 +3,31 @@ import { requireModule } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
 import { decideLeave, requestLeave } from "@/app/admin/actions/hr";
 import { Badge, Card, EmptyState, PageHeader, inputClass } from "@/components/admin/ui";
+import { DataTools } from "@/components/admin/DataTools";
 import { formatDate } from "@/lib/utils";
 
 const TYPES = ["CASUAL", "SICK", "EARNED", "UNPAID"];
 const TONE = { REQUESTED: "warn", APPROVED: "success", REJECTED: "muted" } as const;
 const pretty = (v: string) => v.charAt(0) + v.slice(1).toLowerCase();
 
-export default async function LeavePage() {
+export default async function LeavePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string; from?: string; to?: string }>;
+}) {
   const session = await requireModule("team");
+  const { q, status, from, to } = await searchParams;
+  const term = q?.trim();
+  const end = to ? new Date(to) : undefined;
+  if (end) end.setHours(23, 59, 59, 999);
 
   const [requests, employees] = await Promise.all([
     prisma.leaveRequest.findMany({
+      where: {
+        ...(status && status !== "ALL" ? { status: status as never } : {}),
+        ...(term ? { OR: [{ reason: { contains: term } }, { employee: { name: { contains: term } } }] } : {}),
+        ...(from || end ? { fromDate: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } } : {}),
+      },
       orderBy: [{ status: "asc" }, { fromDate: "desc" }],
       include: { employee: { select: { name: true, department: true } }, decidedBy: { select: { name: true } } },
     }),
@@ -62,8 +76,13 @@ export default async function LeavePage() {
         </form>
       </Card>
 
+      <DataTools dataset="leave-requests" />
+
       {requests.length === 0 ? (
-        <EmptyState title="No leave requests" description="Requests appear here for approval." />
+        <EmptyState
+          title={term ? `Nothing matches “${term}”` : "No leave requests"}
+          description={term ? "Try a shorter search, or clear the filters." : "Requests appear here for approval."}
+        />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-sm">
           <table className="w-full text-left text-sm">

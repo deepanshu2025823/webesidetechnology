@@ -13,6 +13,7 @@ import {
 } from "@/app/admin/actions/renewals";
 import { Alert, Badge, Card, SubmitButton, Toggle, inputClass } from "@/components/admin/ui";
 import { cn, formatDate, formatMoney } from "@/lib/utils";
+import { personLabel, type Person } from "@/components/admin/people";
 
 type Row = {
   id: string;
@@ -60,7 +61,7 @@ export function RenewalManager({
   rows: Row[];
   clients: { id: string; name: string }[];
   projects: { id: string; name: string }[];
-  owners: { id: string; name: string }[];
+  owners: Person[];
   editable: boolean;
   canInvoice: boolean;
 }) {
@@ -125,7 +126,7 @@ export function RenewalManager({
                   <option value="">Me</option>
                   {owners.map((o) => (
                     <option key={o.id} value={o.id}>
-                      {o.name}
+                      {personLabel(o)}
                     </option>
                   ))}
                 </select>

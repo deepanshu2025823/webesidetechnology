@@ -47,7 +47,7 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
   const canEditTasks = canEdit(session.role, "tasks");
   const assignees = await prisma.user.findMany({
     where: { isActive: true },
-    select: { id: true, name: true },
+    select: { id: true, name: true, role: true },
     orderBy: { name: "asc" },
   });
 

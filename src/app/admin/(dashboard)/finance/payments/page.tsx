@@ -2,14 +2,36 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { EmptyState, PageHeader } from "@/components/admin/ui";
+import { DataTools } from "@/components/admin/DataTools";
 import { formatDate, formatMoney } from "@/lib/utils";
 
 const pretty = (v: string) => v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, " ");
 
-export default async function PaymentsPage() {
+export default async function PaymentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; from?: string; to?: string }>;
+}) {
   await requireModule("finance");
+  const { q, from, to } = await searchParams;
+  const term = q?.trim();
+  const end = to ? new Date(to) : undefined;
+  if (end) end.setHours(23, 59, 59, 999);
 
   const payments = await prisma.payment.findMany({
+    where: {
+      ...(term
+        ? {
+            OR: [
+              { reference: { contains: term } },
+              { notes: { contains: term } },
+              { client: { name: { contains: term } } },
+              { invoice: { number: { contains: term } } },
+            ],
+          }
+        : {}),
+      ...(from || end ? { paidAt: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } } : {}),
+    },
     orderBy: { paidAt: "desc" },
     take: 300,
     include: {
@@ -25,8 +47,13 @@ export default async function PaymentsPage() {
     <>
       <PageHeader title="Payments" description={`${formatMoney(total)} received across ${payments.length} entries.`} />
 
+      <DataTools dataset="payments" />
+
       {payments.length === 0 ? (
-        <EmptyState title="No payments yet" description="Record payments from an invoice page." />
+        <EmptyState
+          title={term ? `Nothing matches “${term}”` : "No payments yet"}
+          description={term ? "Try a shorter search, or clear the filters." : "Record payments from an invoice page."}
+        />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-sm">
           <div className="scroll-slim overflow-x-auto">

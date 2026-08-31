@@ -4,6 +4,7 @@ import { requireModule } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
 import { EmptyState, PageHeader } from "@/components/admin/ui";
 import { RenewalManager } from "@/components/admin/RenewalManager";
+import { DataTools } from "@/components/admin/DataTools";
 import { cn, formatMoney } from "@/lib/utils";
 
 const WINDOWS = [
@@ -17,22 +18,35 @@ const WINDOWS = [
 export default async function RenewalsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ window?: string }>;
+  searchParams: Promise<{ window?: string; q?: string; status?: string }>;
 }) {
   const session = await requireModule("renewals");
-  const { window: win } = await searchParams;
+  const { window: win, q, status } = await searchParams;
   const active = win ?? "90";
+  const term = q?.trim();
 
   const now = new Date();
   const [renewals, clients, projects, owners] = await Promise.all([
     prisma.renewal.findMany({
-      where: { status: { notIn: ["CANCELLED"] } },
+      where: {
+        ...(status && status !== "ALL" ? { status: status as never } : { status: { notIn: ["CANCELLED"] } }),
+        ...(term
+          ? {
+              OR: [
+                { name: { contains: term } },
+                { provider: { contains: term } },
+                { identifier: { contains: term } },
+                { client: { name: { contains: term } } },
+              ],
+            }
+          : {}),
+      },
       orderBy: { expiryDate: "asc" },
       include: { client: { select: { id: true, name: true } }, owner: { select: { name: true } } },
     }),
     prisma.client.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
     prisma.clientProject.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
   ]);
 
   const withDays = renewals.map((r) => ({
@@ -49,6 +63,13 @@ export default async function RenewalsPage({
   const dueValue = filtered.reduce((sum, r) => sum + r.amount, 0);
   const overdueCount = withDays.filter((r) => r.daysLeft < 0).length;
 
+  /** Window links keep whatever search and status are already applied. */
+  const windowHref = (next: string) => {
+    const params = new URLSearchParams({ window: next });
+    for (const [key, value] of Object.entries({ q, status })) if (value) params.set(key, value);
+    return `/admin/renewals?${params}`;
+  };
+
   return (
     <>
       <PageHeader
@@ -60,11 +81,13 @@ export default async function RenewalsPage({
         }
       />
 
+      <DataTools dataset="renewals" />
+
       <nav className="mb-5 flex flex-wrap gap-2">
         {WINDOWS.map((w) => (
           <Link
             key={w.key}
-            href={`/admin/renewals?window=${w.key}`}
+            href={windowHref(w.key)}
             className={cn(
               "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
               active === w.key

@@ -293,13 +293,18 @@ export async function saveSettings(_prev: ActionState, form: FormData): Promise<
     "email", "altEmail", "phone", "altPhone", "whatsapp", "addressLine", "city", "state",
     "postalCode", "country", "mapEmbedUrl", "workingHours", "facebook", "instagram",
     "linkedin", "twitter", "youtube", "footerAbout", "ctaTitle", "ctaSubtitle", "ctaButton",
-    "ctaUrl", "metaTitle", "metaDescription", "metaKeywords", "gaMeasurementId",
+    "ctaUrl", "videoTitle", "videoSubtitle", "metaTitle", "metaDescription", "metaKeywords", "gaMeasurementId",
     "gtmContainerId", "searchConsoleId", "schemaOrgType", "foundingYear",
   ] as const;
 
   const linkKeys = new Set(["facebook", "instagram", "linkedin", "twitter", "youtube"]);
 
-  const data: Record<string, string | boolean> = { robotsIndexable: bool(form, "robotsIndexable") };
+  const data: Record<string, string | boolean | number> = {
+    robotsIndexable: bool(form, "robotsIndexable"),
+    videoEnabled: bool(form, "videoEnabled"),
+    // Clamped because the grid classes only exist for 1-6 across.
+    videoPerRow: Math.max(1, Math.min(6, Number(str(form, "videoPerRow")) || 3)),
+  };
   for (const key of textKeys) {
     const raw = str(form, key);
     data[key] = linkKeys.has(key) ? normalizeUrl(raw) : raw;

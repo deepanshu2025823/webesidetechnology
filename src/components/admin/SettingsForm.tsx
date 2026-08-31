@@ -13,6 +13,7 @@ const TABS = [
   { id: "contact", label: "Contact" },
   { id: "social", label: "Social" },
   { id: "cta", label: "Call to action" },
+  { id: "videos", label: "Video carousel" },
   { id: "seo", label: "SEO & analytics" },
 ] as const;
 
@@ -182,6 +183,50 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             </FieldWrap>
             <FieldWrap label="Button link" htmlFor="ctaUrl">
               <input id="ctaUrl" name="ctaUrl" defaultValue={value("ctaUrl")} className={inputClass} />
+            </FieldWrap>
+          </div>
+        </Card>
+      </div>
+
+      <div className={tab === "videos" ? "space-y-6" : "hidden"}>
+        <Card
+          title="Home-page video carousel"
+          description="The videos themselves are managed under Website → Video carousel."
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Toggle
+                name="videoEnabled"
+                label="Show the video carousel"
+                defaultChecked={settings.videoEnabled !== false}
+                help="Turn off to hide the whole section without deleting any videos."
+              />
+            </div>
+            <FieldWrap label="Section heading" htmlFor="videoTitle">
+              <input id="videoTitle" name="videoTitle" defaultValue={value("videoTitle")} className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="Videos per row" htmlFor="videoPerRow" help="On desktop. 1–6; smaller screens adapt on their own.">
+              <select
+                id="videoPerRow"
+                name="videoPerRow"
+                defaultValue={String(settings.videoPerRow ?? 3)}
+                className={inputClass}
+              >
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <option key={n} value={n}>
+                    {n} per row
+                  </option>
+                ))}
+              </select>
+            </FieldWrap>
+            <FieldWrap label="Section sub-heading" htmlFor="videoSubtitle" className="sm:col-span-2">
+              <textarea
+                id="videoSubtitle"
+                name="videoSubtitle"
+                rows={2}
+                defaultValue={value("videoSubtitle")}
+                className={inputClass}
+              />
             </FieldWrap>
           </div>
         </Card>

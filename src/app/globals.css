@@ -254,7 +254,9 @@
 }
 
 .bp-arrow {
-  width: 200px; max-width: 40vw; height: 1px;
+  /* Sits between "Not" and "Quantity", so it is sized to leave the word room
+     on one line rather than to fill the panel. */
+  width: 150px; max-width: 22vw; height: 1px;
   background: var(--bp-navy);
   position: relative;
   transform-origin: left;
@@ -303,7 +305,7 @@
   .bp-cord { top: -40px; height: 40px; }
   .bp-shade { top: -6px; width: 16px; height: 9px; }
   .bp-bulb { width: 5px; height: 5px; }
-  .bp-arrow { max-width: 55vw; }
+  .bp-arrow { width: 92px; max-width: 26vw; }
 }
 
 @media (max-width: 380px) {

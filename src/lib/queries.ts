@@ -39,6 +39,10 @@ export const DEFAULT_SETTINGS = {
   ctaSubtitle: "",
   ctaButton: "Book a free consultation",
   ctaUrl: "/contact",
+  videoEnabled: true,
+  videoTitle: "Work in motion",
+  videoSubtitle: "",
+  videoPerRow: 3,
   metaTitle: "",
   metaDescription: "",
   metaKeywords: "",
@@ -200,4 +204,8 @@ export const getClientLogos = cache(async () =>
 
 export const getHeroSlides = cache(async () =>
   prisma.heroSlide.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
+);
+
+export const getVideoSlides = cache(async () =>
+  prisma.videoSlide.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
 );

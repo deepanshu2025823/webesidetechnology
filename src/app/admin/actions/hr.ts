@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { logActivity, requirePermission } from "@/lib/auth";
+import { alertLeaveRequest } from "@/lib/alerts";
 import { notify } from "@/lib/notify";
 import type { ActionState } from "@/app/admin/actions/collections";
 
@@ -99,7 +100,7 @@ export async function requestLeave(_prev: ActionState, form: FormData): Promise<
 
   const days = Math.max(1, Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1);
 
-  await prisma.leaveRequest.create({
+  const leave = await prisma.leaveRequest.create({
     data: {
       employeeId,
       type: (str(form, "type") || "CASUAL") as never,
@@ -110,6 +111,7 @@ export async function requestLeave(_prev: ActionState, form: FormData): Promise<
     },
   });
 
+  await alertLeaveRequest(leave.id);
   await logActivity(session.id, "create", "LeaveRequest", employeeId, `${days} day(s)`);
   revalidatePath("/admin/hr/leave");
   return { ok: true, message: "Leave request submitted." };

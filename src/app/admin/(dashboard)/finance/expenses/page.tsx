@@ -2,13 +2,35 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
 import { PageHeader } from "@/components/admin/ui";
+import { DataTools } from "@/components/admin/DataTools";
 import { ExpenseManager } from "@/components/admin/ExpenseManager";
 
-export default async function ExpensesPage() {
+export default async function ExpensesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; from?: string; to?: string }>;
+}) {
   const session = await requireModule("finance");
+  const { q, from, to } = await searchParams;
+  const term = q?.trim();
+  const end = to ? new Date(to) : undefined;
+  if (end) end.setHours(23, 59, 59, 999);
 
   const [expenses, clients, projects, services] = await Promise.all([
     prisma.expense.findMany({
+      where: {
+        ...(term
+          ? {
+              OR: [
+                { title: { contains: term } },
+                { vendor: { contains: term } },
+                { category: { contains: term } },
+                { notes: { contains: term } },
+              ],
+            }
+          : {}),
+        ...(from || end ? { spentAt: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } } : {}),
+      },
       orderBy: { spentAt: "desc" },
       take: 300,
       include: { client: { select: { name: true } }, project: { select: { name: true } } },
@@ -24,6 +46,9 @@ export default async function ExpensesPage() {
         title="Expenses"
         description="Costs recorded against a client, project or service — the other half of profitability."
       />
+
+      <DataTools dataset="expenses" />
+
       <ExpenseManager
         editable={canEdit(session.role, "finance")}
         clients={clients}

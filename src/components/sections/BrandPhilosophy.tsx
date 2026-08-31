@@ -166,17 +166,19 @@ export function BrandPhilosophy() {
             </span>
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center justify-center text-center">
-            <span className="bp-word bp-reveal font-display font-extrabold text-gold-500" style={delay(1.16)}>
-              Quantity<span className="text-gold-500">.</span>
-            </span>
-          </div>
-
-          <div className="mt-3.5 flex items-center justify-center gap-4 text-[0.95rem] font-semibold uppercase tracking-[0.125em] text-navy-900">
-            <span className="bp-reveal" style={delay(1.24)}>
+          {/* "Not" and the arrow lead the eye into "Quantity", so the whole
+              claim reads as one line: Quality, not quantity. */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <span
+              className="bp-reveal text-[0.95rem] font-semibold uppercase tracking-[0.125em] text-navy-900"
+              style={delay(1.16)}
+            >
               Not
             </span>
-            <span className="bp-arrow bp-reveal bp-grow-x" style={delay(1.28)} aria-hidden />
+            <span className="bp-arrow bp-reveal bp-grow-x" style={delay(1.2)} aria-hidden />
+            <span className="bp-word bp-reveal font-display font-extrabold text-gold-500" style={delay(1.3)}>
+              Quantity<span className="text-gold-500">.</span>
+            </span>
           </div>
         </div>
 

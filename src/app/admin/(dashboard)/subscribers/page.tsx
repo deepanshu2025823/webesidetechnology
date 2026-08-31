@@ -1,34 +1,46 @@
 import { prisma } from "@/lib/prisma";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
+import { DataTools } from "@/components/admin/DataTools";
 import { formatDate } from "@/lib/utils";
 
-export default async function SubscribersPage() {
-  const subscribers = await prisma.subscriber.findMany({ orderBy: { createdAt: "desc" }, take: 500 });
+export default async function SubscribersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; from?: string; to?: string }>;
+}) {
+  const { q, from, to } = await searchParams;
+  const term = q?.trim();
+  const end = to ? new Date(to) : undefined;
+  if (end) end.setHours(23, 59, 59, 999);
 
-  const csvHref = `data:text/csv;charset=utf-8,${encodeURIComponent(
-    ["email,name,source,subscribed", ...subscribers.map((s) => `${s.email},${s.name},${s.source},${s.createdAt.toISOString()}`)].join("\n"),
-  )}`;
+  const subscribers = await prisma.subscriber.findMany({
+    where: {
+      ...(term
+        ? { OR: [{ email: { contains: term } }, { name: { contains: term } }, { source: { contains: term } }] }
+        : {}),
+      ...(from || end
+        ? { createdAt: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } }
+        : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    take: 500,
+  });
 
   return (
     <>
       <PageHeader
         title="Newsletter subscribers"
         description="Everyone who signed up through the footer form."
-        actions={
-          subscribers.length ? (
-            <a
-              href={csvHref}
-              download="sahab-india-subscribers.csv"
-              className="rounded-xl border border-navy-900/15 px-4 py-2.5 text-sm font-semibold text-navy-800 transition-colors hover:border-gold-500 hover:bg-gold-50"
-            >
-              Export CSV
-            </a>
-          ) : null
-        }
       />
 
+      {/* Export, import and search all come from the shared toolbar. */}
+      <DataTools dataset="subscribers" />
+
       {subscribers.length === 0 ? (
-        <EmptyState title="No subscribers yet" description="Sign-ups from the footer form will land here." />
+        <EmptyState
+          title={term ? `Nothing matches “${term}”` : "No subscribers yet"}
+          description={term ? "Try a shorter search." : "Sign-ups from the footer form will land here."}
+        />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-sm">
           <table className="w-full text-left text-sm">

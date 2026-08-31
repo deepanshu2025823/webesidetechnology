@@ -12,6 +12,7 @@ import type { Role } from "@/generated/prisma/enums";
 export type ModuleKey =
   | "dashboard"
   | "leads"
+  | "chats"
   | "clients"
   | "quotations"
   | "projects"
@@ -76,61 +77,61 @@ const N: Access = "none";
  */
 export const PERMISSIONS: Record<Role, Record<ModuleKey, Access>> = {
   SUPER_ADMIN: {
-    dashboard: W, leads: W, clients: W, quotations: W, projects: W, tasks: W,
+    dashboard: W, leads: W, chats: W, clients: W, quotations: W, projects: W, tasks: W,
     finance: W, renewals: W, campaigns: W, events: W, team: W, payroll: W,
     influencers: W, partners: W, reports: W, documents: W, portal: W,
     integrations: W, website: W, settings: W, users: W,
   },
   DIRECTOR: {
-    dashboard: W, leads: W, clients: W, quotations: W, projects: W, tasks: W,
+    dashboard: W, leads: W, chats: W, clients: W, quotations: W, projects: W, tasks: W,
     finance: W, renewals: W, campaigns: W, events: W, team: W, payroll: R,
     influencers: R, partners: R, reports: W, documents: W, portal: W,
     integrations: R, website: R, settings: R, users: N,
   },
   SALES: {
-    dashboard: R, leads: W, clients: W, quotations: W, projects: R, tasks: N,
+    dashboard: R, leads: W, chats: W, clients: W, quotations: W, projects: R, tasks: N,
     finance: N, renewals: R, campaigns: N, events: N, team: N, payroll: N,
     influencers: N, partners: R, reports: R, documents: R, portal: N,
     integrations: N, website: N, settings: N, users: N,
   },
   PROJECT_MANAGER: {
-    dashboard: R, leads: R, clients: W, quotations: R, projects: W, tasks: W,
+    dashboard: R, leads: R, chats: W, clients: W, quotations: R, projects: W, tasks: W,
     finance: R, renewals: W, campaigns: W, events: W, team: R, payroll: N,
     influencers: N, partners: N, reports: R, documents: W, portal: W,
     integrations: N, website: N, settings: N, users: N,
   },
   TEAM_LEAD: {
-    dashboard: R, leads: N, clients: R, quotations: N, projects: R, tasks: W,
+    dashboard: R, leads: N, chats: N, clients: R, quotations: N, projects: R, tasks: W,
     finance: N, renewals: N, campaigns: W, events: R, team: R, payroll: N,
     influencers: N, partners: N, reports: R, documents: R, portal: N,
     integrations: N, website: N, settings: N, users: N,
   },
   TEAM_MEMBER: {
-    dashboard: R, leads: N, clients: N, quotations: N, projects: O, tasks: O,
+    dashboard: R, leads: N, chats: N, clients: N, quotations: N, projects: O, tasks: O,
     finance: N, renewals: N, campaigns: O, events: N, team: O, payroll: O,
     influencers: N, partners: N, reports: N, documents: R, portal: N,
     integrations: N, website: N, settings: N, users: N,
   },
   FINANCE: {
-    dashboard: R, leads: N, clients: R, quotations: R, projects: R, tasks: N,
+    dashboard: R, leads: N, chats: N, clients: R, quotations: R, projects: R, tasks: N,
     finance: W, renewals: W, campaigns: N, events: N, team: R, payroll: W,
     influencers: N, partners: R, reports: W, documents: R, portal: N,
     integrations: N, website: N, settings: N, users: N,
   },
   HR: {
-    dashboard: R, leads: N, clients: N, quotations: N, projects: N, tasks: N,
+    dashboard: R, leads: N, chats: N, clients: N, quotations: N, projects: N, tasks: N,
     finance: N, renewals: N, campaigns: N, events: N, team: W, payroll: W,
     influencers: N, partners: N, reports: R, documents: N, portal: N,
     integrations: N, website: N, settings: N, users: N,
   },
   PARTNER_MANAGER: {
-    dashboard: R, leads: N, clients: R, quotations: N, projects: N, tasks: N,
+    dashboard: R, leads: N, chats: N, clients: R, quotations: N, projects: N, tasks: N,
     finance: N, renewals: N, campaigns: W, events: W, team: N, payroll: N,
     influencers: W, partners: W, reports: R, documents: R, portal: N,
     integrations: N, website: N, settings: N, users: N,
   },
   EDITOR: {
-    dashboard: R, leads: N, clients: N, quotations: N, projects: N, tasks: N,
+    dashboard: R, leads: N, chats: N, clients: N, quotations: N, projects: N, tasks: N,
     finance: N, renewals: N, campaigns: N, events: N, team: N, payroll: N,
     influencers: N, partners: N, reports: N, documents: N, portal: N,
     integrations: N, website: W, settings: N, users: N,
@@ -141,6 +142,7 @@ export const PERMISSIONS: Record<Role, Record<ModuleKey, Access>> = {
 export const MODULE_LABELS: Record<ModuleKey, string> = {
   dashboard: "Dashboard",
   leads: "Leads",
+  chats: "Live chat",
   clients: "Clients",
   quotations: "Quotations",
   projects: "Projects",

@@ -10,7 +10,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
   const [post, categories, authors] = await Promise.all([
     prisma.post.findUnique({ where: { id }, include: { tags: { include: { tag: true } } } }),
     prisma.postCategory.findMany({ orderBy: { order: "asc" }, select: { id: true, name: true } }),
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true } }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true } }),
   ]);
   if (!post) notFound();
 

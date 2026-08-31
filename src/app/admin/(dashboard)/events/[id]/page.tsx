@@ -38,7 +38,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   const assignees = await prisma.user.findMany({
     where: { isActive: true },
-    select: { id: true, name: true },
+    select: { id: true, name: true, role: true },
     orderBy: { name: "asc" },
   });
 

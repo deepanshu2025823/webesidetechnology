@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef } from "react";
 import { Plus } from "lucide-react";
 import { saveTask, type ActionState } from "@/app/admin/actions/crm";
 import { Alert, SubmitButton, inputClass } from "@/components/admin/ui";
+import { personLabel, type Person } from "@/components/admin/people";
 
 const STATUSES = [
   ["TODO", "To do"],
@@ -24,7 +25,7 @@ export function TaskQuickAdd({
 }: {
   projectId: string;
   milestones: { id: string; title: string }[];
-  assignees: { id: string; name: string }[];
+  assignees: Person[];
 }) {
   const [state, action] = useActionState<ActionState, FormData>(saveTask, {});
   const formRef = useRef<HTMLFormElement>(null);
@@ -45,7 +46,7 @@ export function TaskQuickAdd({
           <option value="">Unassigned</option>
           {assignees.map((a) => (
             <option key={a.id} value={a.id}>
-              {a.name}
+              {personLabel(a)}
             </option>
           ))}
         </select>

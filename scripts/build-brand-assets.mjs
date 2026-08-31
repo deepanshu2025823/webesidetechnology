@@ -15,9 +15,7 @@ const SRC = process.argv[2];
 
 // Sampled from the client artwork; kept in step with the tokens in globals.css.
 const NAVY = "#011460";
-const GOLD = "#c99a2b";
 const GOLD_DEEP = "#b58726";
-const GOLD_LIGHT = "#e8c76a";
 const PUBLIC_DIR = path.join(process.cwd(), "public");
 const BRAND_DIR = path.join(PUBLIC_DIR, "brand");
 const APP_DIR = path.join(process.cwd(), "src", "app");
@@ -115,7 +113,7 @@ async function main() {
   const markMeta = await sharp(mark).metadata();
   console.log(`monogram: ${markMeta.width}x${markMeta.height}`);
 
-  await buildFavicons();
+  await buildFavicons(markLight);
   await buildSocialCard(light);
 }
 
@@ -190,47 +188,30 @@ async function cropMonogram(lockup) {
 }
 
 /**
- * The peacock emblem used for the icon set.
+ * Navy rounded-square app icons plus a multi-size .ico, built from the swash
+ * "S" monogram.
  *
- * The supplied logo is purely typographic, so this is drawn to the brand
- * palette rather than extracted. A displaying peacock seen head-on collapses
- * into a moth at 16px, so the mark is the crested head in profile - the crest
- * is what makes a bird read as a peacock - and the small sizes get a heavier
- * variant with the eye and beak detail dropped.
+ * The monogram is the one glyph in the lockup that still reads at 16px, so the
+ * icon set is cut from the real artwork rather than drawn separately - the tab
+ * chip and the header then carry the same mark.
  */
-function peacock(size) {
-  const small = size <= 32;
-  return `
-    <path d="M34 92 C29 74 34 57 46 45" stroke="${GOLD}" stroke-width="${small ? 18 : 15}"
-          stroke-linecap="round" fill="none"/>
-    <circle cx="54" cy="40" r="${small ? 15 : 13}" fill="${GOLD}"/>
-    ${small ? "" : `<path d="M65 38 L83 43 L65 48 Z" fill="${GOLD_DEEP}"/>
-                    <circle cx="58" cy="36" r="3.2" fill="${NAVY}"/>`}
-    <g stroke="${GOLD}" stroke-width="${small ? 4 : 3}" stroke-linecap="round" fill="none">
-      <path d="M46 29 C43 22 42 18 41 14"/>
-      <path d="M54 27 C54 20 54 16 54 12"/>
-      <path d="M62 29 C65 22 66 18 67 14"/>
-    </g>
-    <g fill="${GOLD_LIGHT}">
-      <circle cx="41" cy="12" r="${small ? 5 : 4}"/>
-      <circle cx="54" cy="10" r="${small ? 5 : 4}"/>
-      <circle cx="67" cy="12" r="${small ? 5 : 4}"/>
-    </g>`;
-}
-
-/** Navy rounded-square app icons plus a multi-size .ico. */
-async function buildFavicons() {
-  const icon = async (size, radiusRatio = 0.22) =>
-    sharp(
-      Buffer.from(
-        `<svg width="${size}" height="${size}" viewBox="0 0 100 100">
-           <rect width="100" height="100" rx="${radiusRatio * 100}" ry="${radiusRatio * 100}" fill="${NAVY}"/>
-           <g transform="translate(50 52) scale(0.88) translate(-50 -52)">${peacock(size)}</g>
-         </svg>`
-      )
-    )
-      .png()
+async function buildFavicons(markLight) {
+  const icon = async (size, radiusRatio = 0.22) => {
+    const pad = Math.round(size * 0.16);
+    const art = await sharp(markLight)
+      .resize({
+        width: size - pad * 2,
+        height: size - pad * 2,
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
       .toBuffer();
+    const r = Math.round(size * radiusRatio);
+    const plate = Buffer.from(
+      `<svg width="${size}" height="${size}"><rect width="${size}" height="${size}" rx="${r}" ry="${r}" fill="${NAVY}"/></svg>`
+    );
+    return sharp(plate).composite([{ input: art, gravity: "center" }]).png().toBuffer();
+  };
 
   await sharp(await icon(512)).toFile(path.join(BRAND_DIR, "icon-512.png"));
   await sharp(await icon(192)).toFile(path.join(BRAND_DIR, "icon-192.png"));
@@ -240,7 +221,7 @@ async function buildFavicons() {
   // .ico with 16/32/48px frames for legacy browsers and search-result chips.
   const frames = await Promise.all([16, 32, 48].map(async (s) => ({ size: s, png: await icon(s, 0.14) })));
   await writeFile(path.join(PUBLIC_DIR, "favicon.ico"), buildIco(frames));
-  console.log("wrote peacock icon set (ico 16/32/48, icon.png, apple-icon.png, 192, 512)");
+  console.log("wrote monogram icon set (ico 16/32/48, icon.png, apple-icon.png, 192, 512)");
 }
 
 /** Minimal ICO container wrapping PNG frames. */

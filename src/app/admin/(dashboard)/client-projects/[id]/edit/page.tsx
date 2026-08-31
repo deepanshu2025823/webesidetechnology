@@ -14,7 +14,7 @@ export default async function EditClientProjectPage({ params }: { params: Promis
     prisma.clientProject.findUnique({ where: { id } }),
     prisma.client.findMany({ select: { id: true, name: true, code: true }, orderBy: { name: "asc" } }),
     prisma.service.findMany({ select: { id: true, title: true }, orderBy: { order: "asc" } }),
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
   ]);
   if (!project) notFound();
 

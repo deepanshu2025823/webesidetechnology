@@ -3,6 +3,7 @@ import { Footer } from "@/components/site/Footer";
 import { JsonLd } from "@/components/JsonLd";
 import { WhatsAppButton } from "@/components/site/WhatsAppButton";
 import { MobileBottomNav } from "@/components/site/MobileBottomNav";
+import { ChatWidget } from "@/components/site/ChatWidget";
 import { getMenu, getSettings } from "@/lib/queries";
 import { organizationJsonLd } from "@/lib/seo";
 
@@ -65,6 +66,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       />
       {/* The floating button is desktop-only; on phones WhatsApp lives in the bottom bar. */}
       {settings.whatsapp ? <WhatsAppButton number={settings.whatsapp} siteName={settings.siteName} /> : null}
+
+      <ChatWidget siteName={settings.siteName} />
 
       <MobileBottomNav phone={settings.phone} whatsapp={settings.whatsapp} siteName={settings.siteName} />
     </>

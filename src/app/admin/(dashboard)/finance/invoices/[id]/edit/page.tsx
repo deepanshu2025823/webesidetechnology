@@ -15,7 +15,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
     prisma.client.findMany({ select: { id: true, name: true, code: true }, orderBy: { name: "asc" } }),
     prisma.clientProject.findMany({ select: { id: true, name: true, clientId: true }, orderBy: { name: "asc" } }),
     prisma.service.findMany({ select: { id: true, title: true, priceFrom: true }, orderBy: { order: "asc" } }),
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
   ]);
   if (!invoice) notFound();
 

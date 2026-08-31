@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
+import { DataTools } from "@/components/admin/DataTools";
 import { cn, formatDate, formatMoney } from "@/lib/utils";
 
 const TONE = {
@@ -20,13 +21,31 @@ const STAGES = ["ALL", "DRAFT", "SENT", "NEGOTIATION", "ACCEPTED", "REJECTED", "
 export default async function QuotationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; from?: string; to?: string }>;
 }) {
   const session = await requireModule("quotations");
-  const { status } = await searchParams;
+  const { status, q, from, to } = await searchParams;
+
+  const term = q?.trim();
+  const end = to ? new Date(to) : undefined;
+  if (end) end.setHours(23, 59, 59, 999);
 
   const quotations = await prisma.quotation.findMany({
-    where: status && status !== "ALL" ? { status: status as never } : undefined,
+    where: {
+      ...(status && status !== "ALL" ? { status: status as never } : {}),
+      ...(term
+        ? {
+            OR: [
+              { number: { contains: term } },
+              { title: { contains: term } },
+              { client: { name: { contains: term } } },
+            ],
+          }
+        : {}),
+      ...(from || end
+        ? { createdAt: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } }
+        : {}),
+    },
     orderBy: { createdAt: "desc" },
     include: { client: { select: { id: true, name: true } }, owner: { select: { name: true } } },
   });
@@ -35,6 +54,14 @@ export default async function QuotationsPage({
     .filter((q) => ["SENT", "NEGOTIATION"].includes(q.status))
     .reduce((sum, q) => sum + q.total, 0);
   const editable = canEdit(session.role, "quotations");
+
+  /** Stage links keep whatever search and dates are already applied. */
+  const stageHref = (next: string) => {
+    const params = new URLSearchParams();
+    if (next !== "ALL") params.set("status", next);
+    for (const [key, value] of Object.entries({ q, from, to })) if (value) params.set(key, value);
+    return params.size ? `/admin/quotations?${params}` : "/admin/quotations";
+  };
 
   return (
     <>
@@ -57,11 +84,14 @@ export default async function QuotationsPage({
         }
       />
 
+      {/* Stage chips below already filter by status. */}
+      <DataTools dataset="quotations" statuses={false} />
+
       <nav className="mb-5 flex flex-wrap gap-2">
         {STAGES.map((s) => (
           <Link
             key={s}
-            href={s === "ALL" ? "/admin/quotations" : `/admin/quotations?status=${s}`}
+            href={stageHref(s)}
             className={cn(
               "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
               (status ?? "ALL") === s

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { logActivity, requirePermission } from "@/lib/auth";
+import { alertPaymentRecorded } from "@/lib/alerts";
 import type { Prisma } from "@/generated/prisma/client";
 import type { ActionState } from "@/app/admin/actions/collections";
 
@@ -249,7 +250,7 @@ export async function recordPayment(invoiceId: string, form: FormData): Promise<
   const invoice = await prisma.invoice.findUnique({ where: { id: invoiceId }, select: { clientId: true, number: true } });
   if (!invoice) return;
 
-  await prisma.payment.create({
+  const payment = await prisma.payment.create({
     data: {
       invoiceId,
       clientId: invoice.clientId,
@@ -264,6 +265,7 @@ export async function recordPayment(invoiceId: string, form: FormData): Promise<
 
   await refreshInvoiceStatus(invoiceId);
   await logActivity(session.id, "create", "Payment", invoiceId, `${invoice.number} received ${amount}`);
+  await alertPaymentRecorded(payment.id);
 
   revalidatePath(`/admin/finance/invoices/${invoiceId}`);
   revalidatePath("/admin/finance");

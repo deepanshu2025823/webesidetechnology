@@ -5,14 +5,16 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth";
 import { ClientForm } from "@/components/admin/ClientForm";
 import { PageHeader } from "@/components/admin/ui";
+import { industryOptions } from "@/lib/admin/industries";
 
 export default async function EditClientPage({ params }: { params: Promise<{ id: string }> }) {
   await requirePermission("clients", "write");
   const { id } = await params;
 
-  const [client, owners] = await Promise.all([
+  const [client, owners, used] = await Promise.all([
     prisma.client.findUnique({ where: { id } }),
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
+    prisma.client.findMany({ where: { industry: { not: "" } }, select: { industry: true }, distinct: ["industry"] }),
   ]);
   if (!client) notFound();
 
@@ -25,7 +27,11 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
         <ArrowLeft className="size-4" aria-hidden /> Back to {client.name}
       </Link>
       <PageHeader title={`Edit ${client.name}`} description={client.code} />
-      <ClientForm client={JSON.parse(JSON.stringify(client))} owners={owners} />
+      <ClientForm
+        client={JSON.parse(JSON.stringify(client))}
+        owners={owners}
+        industries={industryOptions(used.map((c) => c.industry))}
+      />
     </>
   );
 }

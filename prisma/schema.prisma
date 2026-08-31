@@ -103,6 +103,10 @@ model User {
   attendanceApprovals Attendance[]
   leaveDecisions      LeaveRequest[]
 
+  // Chatbot
+  chatSessions ChatSession[] @relation("ChatAgent")
+  chatMessages ChatMessage[] @relation("ChatAuthor")
+
   // Partners, notifications, portal
   partnerRewards     PartnerReward[]
   notifications      Notification[]
@@ -165,6 +169,15 @@ model SiteSettings {
   ctaSubtitle String @db.Text
   ctaButton   String @default("Book a free consultation") @db.VarChar(120)
   ctaUrl      String @default("/contact") @db.VarChar(300)
+
+  /// Home-page video carousel.
+  videoEnabled  Boolean @default(true)
+  videoTitle    String  @default("Work in motion") @db.VarChar(200)
+  /// VarChar rather than Text so it can carry a default: the settings row
+  /// already exists, and MySQL cannot add a NOT NULL Text column without one.
+  videoSubtitle String  @default("") @db.VarChar(400)
+  /// How many videos sit side by side on a desktop row (1-6).
+  videoPerRow   Int     @default(3)
 
   metaTitle       String @default("") @db.VarChar(240)
   metaDescription String @db.Text
@@ -2212,4 +2225,145 @@ model Ticket {
   @@index([clientId, status])
   @@index([assigneeId])
   @@index([portalUserId])
+}
+
+// ---------------------------------------------------------------- website: video carousel
+
+/// A video in the home-page carousel. Title and description are optional, so a
+/// reel can be dropped in with nothing but a URL.
+model VideoSlide {
+  id          String   @id @default(cuid())
+  title       String   @default("") @db.VarChar(200)
+  description String?  @db.Text
+  /// YouTube / Vimeo watch or share link, or a direct .mp4 URL.
+  url         String   @db.VarChar(600)
+  /// Optional custom poster; YouTube and Vimeo fall back to their own.
+  thumbnail   String   @default("") @db.VarChar(600)
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, order])
+}
+
+// ---------------------------------------------------------------- chatbot
+
+enum ChatStatus {
+  BOT           // the scripted assistant is handling it
+  WAITING_AGENT // visitor asked for a human, nobody has picked it up
+  WITH_AGENT    // a team member has joined
+  CLOSED
+}
+
+enum ChatRole {
+  VISITOR
+  BOT
+  AGENT
+}
+
+/// One visitor conversation with the "Sahab" assistant.
+model ChatSession {
+  id           String     @id @default(cuid())
+  /// Random token held by the browser; lets a visitor resume without an account.
+  token        String     @unique @db.VarChar(64)
+  visitorName  String     @default("") @db.VarChar(160)
+  visitorEmail String     @default("") @db.VarChar(190)
+  visitorPhone String     @default("") @db.VarChar(60)
+  status       ChatStatus @default(BOT)
+  agentId      String?
+  agent        User?      @relation("ChatAgent", fields: [agentId], references: [id])
+  pageUrl      String     @default("") @db.VarChar(500)
+  ipAddress    String     @default("") @db.VarChar(60)
+  /// Set when the visitor asks for a human, cleared when an agent joins.
+  handoffAt    DateTime?
+  closedAt     DateTime?
+  /// Denormalised so the admin list can sort without touching every message.
+  lastMessageAt DateTime  @default(now())
+  /// Visitor messages the team has not opened yet.
+  unreadForAgent Int      @default(0)
+  /// Lead created from this conversation, if the visitor left their details.
+  leadId       String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  messages ChatMessage[]
+
+  @@index([status, lastMessageAt])
+  @@index([agentId])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      ChatRole
+  body      String      @db.Text
+  /// Set for AGENT messages.
+  authorId  String?
+  author    User?       @relation("ChatAuthor", fields: [authorId], references: [id])
+  createdAt DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+  @@index([authorId])
+}
+
+// ---------------------------------------------------------------- cost calculator
+
+enum CalcKind {
+  SINGLE   // pick one option (radio)
+  MULTI    // pick any number (checkboxes)
+  QUANTITY // one option priced per unit
+  TOGGLE   // a single yes/no add-on
+}
+
+/// A question in the website's project cost calculator. The client supplies the
+/// fields and sub-fields; both are editable in admin so no code change is
+/// needed to reshape the estimate.
+model CalculatorGroup {
+  id       String   @id @default(cuid())
+  label    String   @db.VarChar(200)
+  help     String   @default("") @db.VarChar(400)
+  kind     CalcKind @default(SINGLE)
+  required Boolean  @default(false)
+  order    Int      @default(0)
+  isActive Boolean  @default(true)
+
+  options CalculatorOption[]
+
+  @@index([isActive, order])
+}
+
+/// A sub-field: one answer, and what choosing it does to the estimate.
+model CalculatorOption {
+  id      String          @id @default(cuid())
+  groupId String
+  group   CalculatorGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  label   String          @db.VarChar(200)
+  help    String          @default("") @db.VarChar(400)
+  /// Flat rupees added when selected (or per unit, for a QUANTITY group).
+  price   Int             @default(0)
+  /// Percent applied to the running subtotal; 100 leaves it unchanged.
+  /// Use for "Rush delivery +25%" style options, which set 125.
+  percent Int             @default(100)
+  order   Int             @default(0)
+  isDefault Boolean       @default(false)
+
+  @@index([groupId, order])
+}
+
+/// Copy and behaviour of the calculator, editable without a deploy.
+model CalculatorSettings {
+  id            Int      @id @default(1)
+  isEnabled     Boolean  @default(true)
+  heading       String   @default("Project cost calculator") @db.VarChar(200)
+  subheading    String   @db.Text
+  /// Charged on every estimate before tax; covers PM and QA time.
+  basePrice     Int      @default(0)
+  taxPercent    Int      @default(18)
+  /// The estimate is shown as a range: total ± this percent.
+  variancePct   Int      @default(15)
+  ctaLabel      String   @default("Email me this estimate") @db.VarChar(120)
+  disclaimer    String   @db.Text
+  updatedAt     DateTime @updatedAt
 }

@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import { saveClient, type ActionState } from "@/app/admin/actions/crm";
 import { Alert, Card, FieldWrap, SubmitButton, inputClass } from "@/components/admin/ui";
 import { TagListInput } from "@/components/admin/TagListInput";
+import { personLabel, type Person } from "@/components/admin/people";
+import { IndustrySelect } from "@/components/admin/IndustrySelect";
 
 type ClientValue = {
   id: string;
@@ -35,9 +37,12 @@ const SUGGESTED_TAGS = ["VIP", "Retainer", "One-Time", "High Priority", "Renewal
 export function ClientForm({
   client,
   owners,
+  industries,
 }: {
   client?: ClientValue;
-  owners: { id: string; name: string }[];
+  owners: Person[];
+  /** Standard list merged with industries already on file. */
+  industries: string[];
 }) {
   const [state, action] = useActionState<ActionState, FormData>(saveClient, {});
   const tags = Array.isArray(client?.tags) ? (client.tags as string[]) : [];
@@ -55,8 +60,8 @@ export function ClientForm({
                 <input id="name" name="name" required defaultValue={client?.name} className={inputClass} />
               </FieldWrap>
 
-              <FieldWrap label="Industry" htmlFor="industry">
-                <input id="industry" name="industry" defaultValue={client?.industry} placeholder="Healthcare" className={inputClass} />
+              <FieldWrap label="Industry" htmlFor="industry" help="Not listed? Pick “Add another industry”.">
+                <IndustrySelect options={industries} defaultValue={client?.industry ?? ""} />
               </FieldWrap>
 
               <FieldWrap label="Website" htmlFor="website">
@@ -72,7 +77,7 @@ export function ClientForm({
                   <option value="">— Unassigned —</option>
                   {owners.map((o) => (
                     <option key={o.id} value={o.id}>
-                      {o.name}
+                      {personLabel(o)}
                     </option>
                   ))}
                 </select>

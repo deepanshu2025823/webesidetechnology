@@ -4,10 +4,30 @@ import { prisma } from "@/lib/prisma";
 import { deleteService } from "@/app/admin/actions/content";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
 import { DeleteRowButton } from "@/components/admin/DeleteRowButton";
+import { DataTools } from "@/components/admin/DataTools";
 import { Icon } from "@/components/ui/Icon";
 
-export default async function ServicesAdminPage() {
+export default async function ServicesAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string }>;
+}) {
+  const { q, status } = await searchParams;
+  const term = q?.trim();
+
   const services = await prisma.service.findMany({
+    where: {
+      ...(status && status !== "ALL" ? { status: status as never } : {}),
+      ...(term
+        ? {
+            OR: [
+              { title: { contains: term } },
+              { shortDescription: { contains: term } },
+              { slug: { contains: term } },
+            ],
+          }
+        : {}),
+    },
     orderBy: [{ order: "asc" }, { createdAt: "asc" }],
     include: { category: true },
   });
@@ -27,14 +47,22 @@ export default async function ServicesAdminPage() {
         }
       />
 
+      <DataTools dataset="services" showDateRange={false} />
+
       {services.length === 0 ? (
         <EmptyState
-          title="No services yet"
-          description="Add your first service to populate the services page and the home page grid."
+          title={term ? `Nothing matches “${term}”` : "No services yet"}
+          description={
+            term
+              ? "Try a shorter search, or clear the filters above."
+              : "Add your first service to populate the services page and the home page grid."
+          }
           action={
-            <Link href="/admin/services/new" className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">
-              Add a service
-            </Link>
+            term ? null : (
+              <Link href="/admin/services/new" className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">
+                Add a service
+              </Link>
+            )
           }
         />
       ) : (

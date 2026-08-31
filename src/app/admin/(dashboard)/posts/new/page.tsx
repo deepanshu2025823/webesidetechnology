@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/admin/ui";
 export default async function NewPostPage() {
   const [categories, authors] = await Promise.all([
     prisma.postCategory.findMany({ orderBy: { order: "asc" }, select: { id: true, name: true } }),
-    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true } }),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true } }),
   ]);
 
   return (

@@ -4,8 +4,15 @@ import { requireModule } from "@/lib/auth";
 import { canEdit, type ModuleKey } from "@/lib/permissions";
 import { COLLECTIONS, getCollection } from "@/lib/admin/collections";
 import { CollectionManager } from "@/components/admin/CollectionManager";
+import { DataTools } from "@/components/admin/DataTools";
 
 type Params = { params: Promise<{ collection: string[] }> };
+
+/**
+ * Collections that also have a dataset registered, and so get import, export
+ * and reporting on top of the in-page search.
+ */
+const DATASETS_BY_SLUG: Record<string, string> = { "hr/employees": "employees" };
 
 export function generateStaticParams() {
   return Object.keys(COLLECTIONS).map((collection) => ({ collection: collection.split("/") }));
@@ -38,12 +45,21 @@ export default async function CollectionPage({ params }: Params) {
       .map((r) => ({ value: r.id, label: `${r.label} (${String(r.location).replace("_", " ")})` }));
   }
 
+  const dataset = DATASETS_BY_SLUG[slug];
+
   return (
     <CollectionManager
       collection={collection}
       rows={JSON.parse(JSON.stringify(rows))}
       dynamicOptions={dynamicOptions}
       readOnly={!canEdit(session.role, (collection.module ?? "website") as ModuleKey)}
+      tools={
+        dataset ? (
+          // The manager already searches the loaded rows, so only the file
+          // actions are needed here.
+          <DataTools dataset={dataset} showSearch={false} showDateRange={false} statuses={false} />
+        ) : null
+      }
     />
   );
 }

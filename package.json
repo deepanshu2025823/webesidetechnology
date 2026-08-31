@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:calculator": "tsx scripts/seed-calculator.ts",
     "db:studio": "prisma studio",
     "brand:assets": "node scripts/build-brand-assets.mjs",
     "postinstall": "prisma generate"

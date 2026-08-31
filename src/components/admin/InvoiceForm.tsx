@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { saveInvoice, type ActionState } from "@/app/admin/actions/finance";
 import { Alert, Card, FieldWrap, SubmitButton, inputClass } from "@/components/admin/ui";
+import { personLabel, type Person } from "@/components/admin/people";
 import {
   LineItemsEditor,
   TotalsSummary,
@@ -50,7 +51,7 @@ export function InvoiceForm({
   clients: { id: string; name: string; code: string }[];
   projects: { id: string; name: string; clientId: string }[];
   services: { id: string; title: string; priceFrom: number | null }[];
-  owners: { id: string; name: string }[];
+  owners: Person[];
   defaultClientId?: string;
 }) {
   const [state, action] = useActionState<ActionState, FormData>(saveInvoice, {});
@@ -163,7 +164,7 @@ export function InvoiceForm({
                   <option value="">— Me —</option>
                   {owners.map((o) => (
                     <option key={o.id} value={o.id}>
-                      {o.name}
+                      {personLabel(o)}
                     </option>
                   ))}
                 </select>
