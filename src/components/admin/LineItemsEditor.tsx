@@ -3,6 +3,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import { inputClass } from "@/components/admin/ui";
 import { formatMoney } from "@/lib/utils";
+import { BILLING_CYCLES } from "@/lib/billing";
 
 export type LineItem = {
   serviceId: string;
@@ -10,6 +11,8 @@ export type LineItem = {
   description: string;
   quantity: string;
   unitPrice: string;
+  /** How often this line recurs - printed on the quotation and the invoice. */
+  billingCycle: string;
 };
 
 export const blankLineItem = (): LineItem => ({
@@ -18,6 +21,7 @@ export const blankLineItem = (): LineItem => ({
   description: "",
   quantity: "1",
   unitPrice: "0",
+  billingCycle: "ONE_TIME",
 });
 
 export function lineItemTotals(items: LineItem[], discountPct: string, taxPct: string) {
@@ -97,7 +101,7 @@ export function LineItemsEditor({
                 />
               </div>
 
-              <div className="sm:col-span-3">
+              <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-slate-600">Qty</label>
                 <input
                   type="number"
@@ -108,7 +112,7 @@ export function LineItemsEditor({
                 />
               </div>
 
-              <div className="sm:col-span-4">
+              <div className="sm:col-span-3">
                 <label className="text-xs font-medium text-slate-600">Unit price (₹)</label>
                 <input
                   type="number"
@@ -119,7 +123,22 @@ export function LineItemsEditor({
                 />
               </div>
 
-              <div className="sm:col-span-5">
+              <div className="sm:col-span-3">
+                <label className="text-xs font-medium text-slate-600">Duration</label>
+                <select
+                  value={item.billingCycle || "ONE_TIME"}
+                  onChange={(e) => update(index, { billingCycle: e.target.value })}
+                  className={`${inputClass} mt-1`}
+                >
+                  {BILLING_CYCLES.map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="sm:col-span-4">
                 <label className="text-xs font-medium text-slate-600">Amount</label>
                 <p className="mt-1 rounded-xl border border-navy-900/10 bg-white px-3.5 py-2.5 text-sm font-medium text-navy-900">
                   {formatMoney(Math.max(1, Number(item.quantity) || 1) * Math.max(0, Number(item.unitPrice) || 0))}

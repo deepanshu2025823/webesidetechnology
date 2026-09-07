@@ -11,6 +11,7 @@ type Settings = Record<string, string | boolean | number | Date>;
 const TABS = [
   { id: "brand", label: "Brand" },
   { id: "contact", label: "Contact" },
+  { id: "billing", label: "Billing & payments" },
   { id: "social", label: "Social" },
   { id: "cta", label: "Call to action" },
   { id: "videos", label: "Video carousel" },
@@ -132,6 +133,70 @@ export function SettingsForm({ settings }: { settings: Settings }) {
               help="In Google Maps choose Share → Embed a map, then paste only the src URL."
             >
               <input id="mapEmbedUrl" name="mapEmbedUrl" defaultValue={value("mapEmbedUrl")} className={inputClass} />
+            </FieldWrap>
+          </div>
+        </Card>
+      </div>
+
+      <div className={tab === "billing" ? "space-y-6" : "hidden"}>
+        <Card
+          title="Tax identity"
+          description="Printed in the header of every quotation and invoice."
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FieldWrap label="GSTIN" htmlFor="gstin">
+              <input id="gstin" name="gstin" defaultValue={value("gstin")} placeholder="07AAACS1234A1Z5" className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="PAN" htmlFor="pan">
+              <input id="pan" name="pan" defaultValue={value("pan")} placeholder="AAACS1234A" className={inputClass} />
+            </FieldWrap>
+          </div>
+        </Card>
+
+        <Card
+          title="Bank account"
+          description="Shown in the payment details block on invoices and quotations. Leave every field blank to hide the block."
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FieldWrap label="Account holder name" htmlFor="bankAccountName" className="sm:col-span-2">
+              <input
+                id="bankAccountName"
+                name="bankAccountName"
+                defaultValue={value("bankAccountName")}
+                placeholder="Defaults to the site name"
+                className={inputClass}
+              />
+            </FieldWrap>
+            <FieldWrap label="Bank name" htmlFor="bankName">
+              <input id="bankName" name="bankName" defaultValue={value("bankName")} className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="Account number" htmlFor="bankAccountNumber">
+              <input id="bankAccountNumber" name="bankAccountNumber" defaultValue={value("bankAccountNumber")} className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="IFSC code" htmlFor="bankIfsc">
+              <input id="bankIfsc" name="bankIfsc" defaultValue={value("bankIfsc")} placeholder="HDFC0001234" className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="Branch" htmlFor="bankBranch">
+              <input id="bankBranch" name="bankBranch" defaultValue={value("bankBranch")} className={inputClass} />
+            </FieldWrap>
+          </div>
+        </Card>
+
+        <Card title="UPI" description="The QR code is printed next to the bank details so a client can pay by scanning.">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <FieldWrap label="UPI ID" htmlFor="upiId">
+              <input id="upiId" name="upiId" defaultValue={value("upiId")} placeholder="sahabindia@okhdfcbank" className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="UPI QR code" help="A square image reads best. Upload the QR from your payment app.">
+              <ImageInput name="upiQr" defaultValue={value("upiQr")} folder="brand" />
+            </FieldWrap>
+            <FieldWrap
+              label="Payment note"
+              htmlFor="paymentNote"
+              className="sm:col-span-2"
+              help="One line under the payment details, e.g. how to share the transaction reference."
+            >
+              <textarea id="paymentNote" name="paymentNote" rows={2} defaultValue={value("paymentNote")} className={inputClass} />
             </FieldWrap>
           </div>
         </Card>

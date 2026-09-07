@@ -37,6 +37,7 @@ export default async function EditQuotationPage({ params }: { params: Promise<{ 
       description: i.description ?? "",
       quantity: String(i.quantity),
       unitPrice: String(i.unitPrice),
+      billingCycle: i.billingCycle,
     })),
   };
 

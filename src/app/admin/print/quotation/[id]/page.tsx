@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { PrintableDocument } from "@/components/admin/PrintableDocument";
+import { agencyForPrint, clientForPrint } from "@/components/admin/print-details";
 import { getSettings } from "@/lib/queries";
 
 export default async function PrintQuotationPage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +12,10 @@ export default async function PrintQuotationPage({ params }: { params: Promise<{
   const [quotation, settings] = await Promise.all([
     prisma.quotation.findUnique({
       where: { id },
-      include: { client: true, items: { orderBy: { order: "asc" } } },
+      include: {
+        client: { include: { contacts: { orderBy: [{ isPrimary: "desc" }, { name: "asc" }] } } },
+        items: { orderBy: { order: "asc" } },
+      },
     }),
     getSettings(),
   ]);
@@ -33,20 +37,8 @@ export default async function PrintQuotationPage({ params }: { params: Promise<{
         taxPct: quotation.taxPct,
         total: quotation.total,
         terms: quotation.terms,
-        client: {
-          name: quotation.client.name,
-          address: [quotation.client.addressLine, quotation.client.city, quotation.client.state, quotation.client.postalCode]
-            .filter(Boolean)
-            .join(", "),
-          gstin: quotation.client.gstin,
-        },
-        agency: {
-          name: settings.siteName,
-          address: [settings.addressLine, settings.city, settings.state, settings.postalCode].filter(Boolean).join(", "),
-          email: settings.email,
-          phone: settings.phone,
-          logo: settings.logoLight,
-        },
+        client: clientForPrint(quotation.client),
+        agency: agencyForPrint(settings),
       }}
     />
   );

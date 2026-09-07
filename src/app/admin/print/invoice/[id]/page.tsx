@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { PrintableDocument } from "@/components/admin/PrintableDocument";
+import { agencyForPrint, clientForPrint } from "@/components/admin/print-details";
 import { getSettings } from "@/lib/queries";
 
 export default async function PrintInvoicePage({ params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +12,12 @@ export default async function PrintInvoicePage({ params }: { params: Promise<{ i
   const [invoice, settings] = await Promise.all([
     prisma.invoice.findUnique({
       where: { id },
-      include: { client: true, items: { orderBy: { order: "asc" } }, creditNotes: true },
+      include: {
+        // Primary contact first so the invoice carries a real mobile and email.
+        client: { include: { contacts: { orderBy: [{ isPrimary: "desc" }, { name: "asc" }] } } },
+        items: { orderBy: { order: "asc" } },
+        creditNotes: true,
+      },
     }),
     getSettings(),
   ]);
@@ -35,20 +41,8 @@ export default async function PrintInvoicePage({ params }: { params: Promise<{ i
         paid: invoice.amountPaid,
         credited: invoice.creditNotes.reduce((sum, c) => sum + c.amount, 0),
         terms: invoice.terms,
-        client: {
-          name: invoice.client.name,
-          address: [invoice.client.addressLine, invoice.client.city, invoice.client.state, invoice.client.postalCode]
-            .filter(Boolean)
-            .join(", "),
-          gstin: invoice.client.gstin,
-        },
-        agency: {
-          name: settings.siteName,
-          address: [settings.addressLine, settings.city, settings.state, settings.postalCode].filter(Boolean).join(", "),
-          email: settings.email,
-          phone: settings.phone,
-          logo: settings.logoLight,
-        },
+        client: clientForPrint(invoice.client),
+        agency: agencyForPrint(settings),
       }}
     />
   );

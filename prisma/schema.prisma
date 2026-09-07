@@ -158,6 +158,20 @@ model SiteSettings {
   mapEmbedUrl String @db.Text
   workingHours String @default("Mon – Sat, 10:00 – 19:00") @db.VarChar(200)
 
+  /// Legal + banking identity printed on quotations and invoices. Kept on the
+  /// settings row so a document always renders the owner's current details
+  /// rather than a copy frozen at the time it was raised.
+  gstin             String @default("") @db.VarChar(40)
+  pan               String @default("") @db.VarChar(20)
+  bankAccountName   String @default("") @db.VarChar(190)
+  bankName          String @default("") @db.VarChar(190)
+  bankAccountNumber String @default("") @db.VarChar(60)
+  bankIfsc          String @default("") @db.VarChar(20)
+  bankBranch        String @default("") @db.VarChar(190)
+  upiId             String @default("") @db.VarChar(190)
+  upiQr             String @default("") @db.VarChar(500)
+  paymentNote       String @default("") @db.VarChar(400)
+
   facebook  String @default("") @db.VarChar(300)
   instagram String @default("") @db.VarChar(300)
   linkedin  String @default("") @db.VarChar(300)
@@ -805,6 +819,7 @@ model QuotationItem {
   quantity    Int       @default(1)
   unitPrice   Int       @default(0)
   amount      Int       @default(0)
+  billingCycle BillingCycle @default(ONE_TIME)
   order       Int       @default(0)
 
   @@index([quotationId])
@@ -968,6 +983,16 @@ model ChangeRequest {
 // Scope sections 8, 17
 // ================================================================
 
+/// How often a line item recurs. Printed next to every service on a
+/// quotation or invoice so the client can see what they are committing to.
+enum BillingCycle {
+  ONE_TIME
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  ANNUAL
+}
+
 enum InvoiceStatus {
   DRAFT
   SENT
@@ -1073,6 +1098,7 @@ model InvoiceItem {
   quantity    Int      @default(1)
   unitPrice   Int      @default(0)
   amount      Int      @default(0)
+  billingCycle BillingCycle @default(ONE_TIME)
   order       Int      @default(0)
 
   @@index([invoiceId])

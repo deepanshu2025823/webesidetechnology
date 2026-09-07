@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { logActivity, requirePermission } from "@/lib/auth";
 import { alertNewClient, alertNewLead } from "@/lib/alerts";
 import { nextCode } from "@/lib/admin/sequence";
+import { toBillingCycle } from "@/lib/billing";
 import type { Prisma } from "@/generated/prisma/client";
 import type { ActionState } from "@/app/admin/actions/collections";
 
@@ -285,7 +286,14 @@ export async function convertLeadToClient(id: string): Promise<void> {
 
 // ------------------------------------------------------------------ quotations
 
-type LineItem = { serviceId?: string; title: string; description?: string; quantity: string; unitPrice: string };
+type LineItem = {
+  serviceId?: string;
+  title: string;
+  description?: string;
+  quantity: string;
+  unitPrice: string;
+  billingCycle?: string;
+};
 
 /** Totals are computed server-side so a tampered form can't change the price. */
 function priceQuotation(items: LineItem[], discountPct: number, taxPct: number) {
@@ -301,6 +309,7 @@ function priceQuotation(items: LineItem[], discountPct: number, taxPct: number) 
         quantity,
         unitPrice,
         amount: quantity * unitPrice,
+        billingCycle: toBillingCycle(i.billingCycle),
         order: index,
       };
     });
@@ -373,6 +382,8 @@ export async function saveQuotation(_prev: ActionState, form: FormData): Promise
 
   await logActivity(session.id, id ? "update" : "create", "Quotation", quotationId, title);
   revalidatePath("/admin/quotations");
+  revalidatePath(`/admin/quotations/${quotationId}`);
+  revalidatePath(`/admin/print/quotation/${quotationId}`);
   redirect(`/admin/quotations/${quotationId}`);
 }
 
@@ -391,6 +402,7 @@ export async function setQuotationStatus(id: string, form: FormData): Promise<vo
 
   await logActivity(session.id, "update", "Quotation", id, `status → ${status}`);
   revalidatePath(`/admin/quotations/${id}`);
+  revalidatePath(`/admin/print/quotation/${id}`);
   revalidatePath("/admin/quotations");
 }
 

@@ -39,6 +39,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
       description: i.description ?? "",
       quantity: String(i.quantity),
       unitPrice: String(i.unitPrice),
+      billingCycle: i.billingCycle,
     })),
   };
 

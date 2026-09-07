@@ -7,6 +7,7 @@ import { canEdit } from "@/lib/permissions";
 import { convertQuotationToProject, setQuotationStatus } from "@/app/admin/actions/crm";
 import { convertQuotationToInvoice } from "@/app/admin/actions/finance";
 import { Badge, Card, PageHeader, inputClass } from "@/components/admin/ui";
+import { billingCycleLabel } from "@/lib/billing";
 import { formatDate, formatMoney } from "@/lib/utils";
 
 const TONE = {
@@ -126,6 +127,7 @@ export default async function QuotationDetailPage({ params }: { params: Promise<
               <thead className="text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="pb-3 font-medium">Item</th>
+                  <th className="pb-3 font-medium">Duration</th>
                   <th className="pb-3 text-center font-medium">Qty</th>
                   <th className="pb-3 text-right font-medium">Rate</th>
                   <th className="pb-3 text-right font-medium">Amount</th>
@@ -140,6 +142,7 @@ export default async function QuotationDetailPage({ params }: { params: Promise<
                         <span className="mt-0.5 block text-xs text-slate-500">{item.description}</span>
                       ) : null}
                     </td>
+                    <td className="py-3 pr-4 text-xs text-slate-600">{billingCycleLabel(item.billingCycle)}</td>
                     <td className="py-3 text-center text-slate-600">{item.quantity}</td>
                     <td className="py-3 text-right text-slate-600">{formatMoney(item.unitPrice)}</td>
                     <td className="py-3 text-right font-medium text-navy-900">{formatMoney(item.amount)}</td>

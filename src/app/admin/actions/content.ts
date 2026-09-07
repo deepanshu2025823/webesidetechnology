@@ -291,7 +291,9 @@ export async function saveSettings(_prev: ActionState, form: FormData): Promise<
   const textKeys = [
     "siteName", "tagline", "description", "logoLight", "logoDark", "logoMark", "ogImage",
     "email", "altEmail", "phone", "altPhone", "whatsapp", "addressLine", "city", "state",
-    "postalCode", "country", "mapEmbedUrl", "workingHours", "facebook", "instagram",
+    "postalCode", "country", "mapEmbedUrl", "workingHours",
+    "gstin", "pan", "bankAccountName", "bankName", "bankAccountNumber", "bankIfsc",
+    "bankBranch", "upiId", "upiQr", "paymentNote", "facebook", "instagram",
     "linkedin", "twitter", "youtube", "footerAbout", "ctaTitle", "ctaSubtitle", "ctaButton",
     "ctaUrl", "videoTitle", "videoSubtitle", "metaTitle", "metaDescription", "metaKeywords", "gaMeasurementId",
     "gtmContainerId", "searchConsoleId", "schemaOrgType", "foundingYear",
@@ -323,6 +325,9 @@ export async function saveSettings(_prev: ActionState, form: FormData): Promise<
 
   await logActivity(session.id, "update", "SiteSettings", "1", "Site settings updated");
   refresh("/", "/sitemap.xml", "/robots.txt");
+  // Bank, UPI and GST details are read straight off this row by every printed
+  // quotation and invoice, so those have to be rebuilt too.
+  revalidatePath("/admin", "layout");
   return { ok: true, message: "Settings saved. The live site has been refreshed." };
 }
 

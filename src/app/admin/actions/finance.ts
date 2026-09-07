@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { logActivity, requirePermission } from "@/lib/auth";
 import { alertPaymentRecorded } from "@/lib/alerts";
+import { toBillingCycle } from "@/lib/billing";
 import type { Prisma } from "@/generated/prisma/client";
 import type { ActionState } from "@/app/admin/actions/collections";
 
@@ -43,7 +44,14 @@ async function nextNumber(kind: "invoice" | "credit") {
   return number;
 }
 
-type LineItem = { serviceId?: string; title: string; description?: string; quantity: string; unitPrice: string };
+type LineItem = {
+  serviceId?: string;
+  title: string;
+  description?: string;
+  quantity: string;
+  unitPrice: string;
+  billingCycle?: string;
+};
 
 /** Money is recomputed on the server; the browser total is only a preview. */
 function priceItems(items: LineItem[], discountPct: number, taxPct: number) {
@@ -59,6 +67,7 @@ function priceItems(items: LineItem[], discountPct: number, taxPct: number) {
         quantity,
         unitPrice,
         amount: quantity * unitPrice,
+        billingCycle: toBillingCycle(i.billingCycle),
         order: index,
       };
     });
@@ -93,6 +102,19 @@ async function refreshInvoiceStatus(invoiceId: string) {
     where: { id: invoiceId },
     data: { amountPaid: paid, status, paidAt: status === "PAID" ? (invoice.paidAt ?? new Date()) : null },
   });
+}
+
+/**
+ * Every surface an invoice appears on. The print route is the one that used to
+ * be missed, which is why an edited invoice still printed its old figures.
+ */
+function refreshInvoice(invoiceId: string) {
+  revalidatePath(`/admin/finance/invoices/${invoiceId}`);
+  revalidatePath(`/admin/finance/invoices/${invoiceId}/edit`);
+  revalidatePath(`/admin/print/invoice/${invoiceId}`);
+  revalidatePath("/admin/finance/invoices");
+  revalidatePath("/admin/finance");
+  revalidatePath("/portal/invoices");
 }
 
 // ------------------------------------------------------------------ invoices
@@ -156,7 +178,7 @@ export async function saveInvoice(_prev: ActionState, form: FormData): Promise<A
   }
 
   await logActivity(session.id, id ? "update" : "create", "Invoice", invoiceId, title);
-  revalidatePath("/admin/finance");
+  refreshInvoice(invoiceId);
   redirect(`/admin/finance/invoices/${invoiceId}`);
 }
 
@@ -171,8 +193,7 @@ export async function setInvoiceStatus(id: string, form: FormData): Promise<void
   if (status !== "DRAFT" && status !== "CANCELLED") await refreshInvoiceStatus(id);
 
   await logActivity(session.id, "update", "Invoice", id, `status → ${status}`);
-  revalidatePath(`/admin/finance/invoices/${id}`);
-  revalidatePath("/admin/finance");
+  refreshInvoice(id);
 }
 
 export async function deleteInvoice(id: string) {
@@ -229,6 +250,7 @@ export async function convertQuotationToInvoice(quotationId: string): Promise<vo
           quantity: i.quantity,
           unitPrice: i.unitPrice,
           amount: i.amount,
+          billingCycle: i.billingCycle,
           order: i.order,
         })),
       },
@@ -236,7 +258,7 @@ export async function convertQuotationToInvoice(quotationId: string): Promise<vo
   });
 
   await logActivity(session.id, "convert", "Quotation", quotationId, `${quotation.number} → ${invoice.number}`);
-  revalidatePath("/admin/finance");
+  refreshInvoice(invoice.id);
   redirect(`/admin/finance/invoices/${invoice.id}`);
 }
 
@@ -267,8 +289,7 @@ export async function recordPayment(invoiceId: string, form: FormData): Promise<
   await logActivity(session.id, "create", "Payment", invoiceId, `${invoice.number} received ${amount}`);
   await alertPaymentRecorded(payment.id);
 
-  revalidatePath(`/admin/finance/invoices/${invoiceId}`);
-  revalidatePath("/admin/finance");
+  refreshInvoice(invoiceId);
 }
 
 export async function deletePayment(id: string): Promise<void> {
@@ -277,7 +298,7 @@ export async function deletePayment(id: string): Promise<void> {
   await prisma.payment.delete({ where: { id } });
   if (payment) {
     await refreshInvoiceStatus(payment.invoiceId);
-    revalidatePath(`/admin/finance/invoices/${payment.invoiceId}`);
+    refreshInvoice(payment.invoiceId);
   }
   await logActivity(session.id, "delete", "Payment", id);
   revalidatePath("/admin/finance");
@@ -295,7 +316,7 @@ export async function issueCreditNote(invoiceId: string, form: FormData): Promis
 
   await refreshInvoiceStatus(invoiceId);
   await logActivity(session.id, "create", "CreditNote", invoiceId, reason);
-  revalidatePath(`/admin/finance/invoices/${invoiceId}`);
+  refreshInvoice(invoiceId);
 }
 
 /** Emails the client their outstanding balance and logs the attempt. */
@@ -332,7 +353,7 @@ export async function sendPaymentReminder(invoiceId: string): Promise<void> {
   });
 
   await logActivity(session.id, "notify", "Invoice", invoiceId, `reminder sent to ${to}`);
-  revalidatePath(`/admin/finance/invoices/${invoiceId}`);
+  refreshInvoice(invoiceId);
 }
 
 // ------------------------------------------------------------------ expenses

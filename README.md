@@ -50,7 +50,7 @@ All seven phases of the scope document, under `/admin`.
 | --- | --- |
 | **Leads** | Website enquiries plus manual leads: pipeline stage, owner, score, follow-up dates, lost reasons, activity log, one-click conversion to a client |
 | **Clients** | Company records with multiple contacts, tags, health score, account manager and a full communication timeline |
-| **Quotations** | Line-item builder with service presets, discount and GST; converts to a project or an invoice, and prints to PDF |
+| **Quotations** | Line-item builder with service presets, per-line billing cycle, discount and GST; converts to a project or an invoice, and prints to PDF |
 | **Projects** | Scope baseline (objectives, inclusions, exclusions, assumptions, acceptance criteria) with auto-versioning, milestones, health and budget |
 | **Tasks** | Status board across the seven states from the scope document, with priority, assignee, due dates and milestone links |
 | **Change requests** | Raise, price and approve scope changes — approval updates budget, end date and scope version automatically |
@@ -59,7 +59,7 @@ All seven phases of the scope document, under `/admin`.
 
 | Section | Covers |
 | --- | --- |
-| **Invoices** | Standard, proforma, milestone and recurring; quotation-to-invoice in one click; print/PDF; status follows the money |
+| **Invoices** | Standard, proforma, milestone and recurring; quotation-to-invoice in one click; print/PDF carrying client contact, GSTIN, per-line billing cycle and the owner's bank/UPI/QR details; status follows the money |
 | **Payments** | Mode, reference and date; part payments update the invoice status and balance automatically |
 | **Credit notes** | Adjustments that reduce the payable amount |
 | **Expenses** | Costs attributed to a client, project or service — the other half of profitability |
@@ -148,7 +148,7 @@ Everything below is editable in `/admin` and appears on the site immediately.
 | **Pages** | Standalone pages (About, Privacy, Terms) on their own URLs |
 | **Home page** | Hero slides, stats, process steps, testimonials, client logos, FAQs |
 | **Site** | Team, navigation menus, media library, admin users |
-| **Settings & SEO** | Brand, logos, contact details, socials, CTA band, default metadata, analytics, index switch |
+| **Settings & SEO** | Brand, logos, contact details, billing & payments (GSTIN, PAN, bank, UPI + QR), socials, CTA band, default metadata, analytics, index switch |
 
 ---
 
@@ -215,7 +215,8 @@ node scripts/fetch-stock-images.mjs   # re-download / re-optimise the set
 
 | Command | Does |
 | --- | --- |
-| `npm run dev` | Development server |
+| `npm run dev` | Development server on **http://**localhost:3000 |
+| `npm run dev:https` | Same, over https://localhost:3000 (self-signed certificate) |
 | `npm run build` / `npm start` | Production build and server |
 | `npm run db:push` | Sync the Prisma schema to TiDB |
 | `npm run db:seed` | Seed/refresh site content (safe to re-run) |

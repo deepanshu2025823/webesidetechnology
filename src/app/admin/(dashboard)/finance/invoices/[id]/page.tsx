@@ -12,6 +12,7 @@ import {
   setInvoiceStatus,
 } from "@/app/admin/actions/finance";
 import { Badge, Card, PageHeader, inputClass } from "@/components/admin/ui";
+import { billingCycleLabel } from "@/lib/billing";
 import { formatDate, formatMoney } from "@/lib/utils";
 
 const TONE = {
@@ -34,7 +35,21 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const invoice = await prisma.invoice.findUnique({
     where: { id },
     include: {
-      client: { select: { id: true, name: true, addressLine: true, city: true, state: true, gstin: true } },
+      client: {
+        select: {
+          id: true,
+          name: true,
+          addressLine: true,
+          city: true,
+          state: true,
+          gstin: true,
+          // Mobile and email live on the contact, not the company row.
+          contacts: {
+            orderBy: [{ isPrimary: "desc" as const }, { name: "asc" as const }],
+            select: { name: true, email: true, phone: true, whatsapp: true, isPrimary: true },
+          },
+        },
+      },
       project: { select: { id: true, name: true } },
       quotation: { select: { id: true, number: true } },
       owner: { select: { name: true } },
@@ -58,6 +73,8 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const remind = sendPaymentReminder.bind(null, id);
 
   const address = [invoice.client.addressLine, invoice.client.city, invoice.client.state].filter(Boolean).join(", ");
+  const contact = invoice.client.contacts.find((c) => c.isPrimary) ?? invoice.client.contacts[0];
+  const clientPhone = contact?.phone || contact?.whatsapp || "";
 
   return (
     <>
@@ -109,6 +126,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 <p className="text-xs uppercase tracking-wide text-slate-500">Billed to</p>
                 <p className="mt-1 font-medium text-navy-900">{invoice.client.name}</p>
                 {address ? <p className="text-sm text-slate-600">{address}</p> : null}
+                {contact?.name ? <p className="text-xs text-slate-500">Contact {contact.name}</p> : null}
+                {clientPhone ? <p className="text-xs text-slate-500">Mobile {clientPhone}</p> : null}
+                {contact?.email ? <p className="text-xs text-slate-500">Email {contact.email}</p> : null}
                 {invoice.client.gstin ? <p className="text-xs text-slate-500">GSTIN {invoice.client.gstin}</p> : null}
               </div>
               <div className="text-right">
@@ -123,6 +143,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <thead className="text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="pb-3 font-medium">Item</th>
+                  <th className="pb-3 font-medium">Duration</th>
                   <th className="pb-3 text-center font-medium">Qty</th>
                   <th className="pb-3 text-right font-medium">Rate</th>
                   <th className="pb-3 text-right font-medium">Amount</th>
@@ -135,6 +156,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                       <span className="font-medium text-navy-900">{item.title}</span>
                       {item.description ? <span className="mt-0.5 block text-xs text-slate-500">{item.description}</span> : null}
                     </td>
+                    <td className="py-3 pr-4 text-xs text-slate-600">{billingCycleLabel(item.billingCycle)}</td>
                     <td className="py-3 text-center text-slate-600">{item.quantity}</td>
                     <td className="py-3 text-right text-slate-600">{formatMoney(item.unitPrice)}</td>
                     <td className="py-3 text-right font-medium text-navy-900">{formatMoney(item.amount)}</td>
