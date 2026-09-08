@@ -15,15 +15,19 @@ export async function generateMetadata() {
   });
 }
 
-/** Filter options, counted from the case studies actually on the page. */
-function optionsFrom(entries: { slug: string; label: string }[]) {
-  const counts = new Map<string, { slug: string; label: string; count: number }>();
+/**
+ * The distinct filter options across the case studies on the page, in the
+ * order given. Services keep the catalogue order the admin panel sets, so the
+ * row reads the same way as the Services menu.
+ */
+function optionsFrom(entries: { slug: string; label: string; sort: number }[]) {
+  const seen = new Map<string, { slug: string; label: string; sort: number }>();
   for (const entry of entries) {
-    const existing = counts.get(entry.slug);
-    if (existing) existing.count += 1;
-    else counts.set(entry.slug, { ...entry, count: 1 });
+    if (!seen.has(entry.slug)) seen.set(entry.slug, entry);
   }
-  return [...counts.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  return [...seen.values()]
+    .sort((a, b) => a.sort - b.sort || a.label.localeCompare(b.label))
+    .map(({ slug, label }) => ({ slug, label }));
 }
 
 export default async function PortfolioPage() {
@@ -42,12 +46,15 @@ export default async function PortfolioPage() {
     tagSlugs: project.tags.map((t) => t.tag.slug),
   }));
 
-  // Counted across every project, so a chip's number is what selecting it shows.
+  // Only services and tags that actually carry a case study — a chip that leads
+  // to an empty grid is worse than no chip.
   const serviceOptions = optionsFrom(
-    projects.flatMap((p) => p.services.map((s) => ({ slug: s.service.slug, label: s.service.title }))),
+    projects.flatMap((p) =>
+      p.services.map((s) => ({ slug: s.service.slug, label: s.service.title, sort: s.service.order })),
+    ),
   );
   const tagOptions = optionsFrom(
-    projects.flatMap((p) => p.tags.map((t) => ({ slug: t.tag.slug, label: t.tag.name }))),
+    projects.flatMap((p) => p.tags.map((t) => ({ slug: t.tag.slug, label: t.tag.name, sort: 0 }))),
   );
 
   return (

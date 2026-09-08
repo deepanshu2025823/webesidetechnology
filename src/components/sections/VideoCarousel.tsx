@@ -89,7 +89,12 @@ export function VideoCarousel({
   const scrollBy = (direction: 1 | -1) => {
     const el = track.current;
     if (!el) return;
-    el.scrollBy({ left: direction * (el.clientWidth / columns) * Math.max(1, columns - 1), behavior: "smooth" });
+    // Measured off a real tile rather than divided out of the track: a reel's
+    // width is fixed, so it bears no relation to the column count.
+    const tile = el.firstElementChild?.getBoundingClientRect().width ?? el.clientWidth / columns;
+    const gap = 20;
+    const step = Math.max(1, Math.floor(el.clientWidth / (tile + gap))) * (tile + gap);
+    el.scrollBy({ left: direction * step, behavior: "smooth" });
   };
 
   // One card per row means there is nothing to scroll past.
@@ -121,11 +126,19 @@ export function VideoCarousel({
               key={item.id}
               className={cn(
                 "min-w-0 shrink-0 snap-start",
-                // A portrait card is tall, so it takes less width than a
-                // landscape one at the same screen size.
-                reel ? "basis-[62%] sm:basis-[36%]" : "basis-[85%] sm:basis-[48%]",
-                BASIS[columns] ?? BASIS[3],
+                !reel && "basis-[85%] sm:basis-[48%]",
+                !reel && (BASIS[columns] ?? BASIS[3]),
               )}
+              /*
+                A reel keeps a fixed tile width instead of taking a share of the
+                row. "Videos per row" was set with landscape tiles in mind, and a
+                third of a 1280px container is a 426px card — which at 9:16 is a
+                758px-tall monolith, taller than the viewport it sits in. 16rem
+                is the size a reel is actually watched at; on a phone the 62%
+                wins instead, so the next tile peeks in and the row reads as
+                swipeable.
+              */
+              style={reel ? { flexBasis: "min(16rem, 62%)" } : undefined}
             >
               <VideoCard item={item} reel={reel} onPlay={() => setPlaying(item)} />
             </li>
@@ -193,7 +206,7 @@ function VideoCard({ item, reel, onPlay }: { item: VideoItem; reel: boolean; onP
             src={poster}
             alt=""
             fill
-            sizes={reel ? "(max-width: 640px) 62vw, (max-width: 1024px) 36vw, 25vw" : "(max-width: 640px) 85vw, (max-width: 1024px) 48vw, 33vw"}
+            sizes={reel ? "(max-width: 640px) 62vw, 256px" : "(max-width: 640px) 85vw, (max-width: 1024px) 48vw, 33vw"}
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             unoptimized={poster.startsWith("http")}
             onError={() => setPoster(video.poster && poster !== video.poster ? video.poster : "")}

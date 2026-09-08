@@ -271,7 +271,11 @@ export function SettingsForm({ settings }: { settings: Settings }) {
             <FieldWrap label="Section heading" htmlFor="videoTitle">
               <input id="videoTitle" name="videoTitle" defaultValue={value("videoTitle")} className={inputClass} />
             </FieldWrap>
-            <FieldWrap label="Videos per row" htmlFor="videoPerRow" help="On desktop. 1–6; smaller screens adapt on their own.">
+            <FieldWrap
+              label="Videos per row"
+              htmlFor="videoPerRow"
+              help="On desktop, for the wide shape. Reels keep a fixed reel-sized tile and fit as many as the row allows."
+            >
               <select
                 id="videoPerRow"
                 name="videoPerRow"
