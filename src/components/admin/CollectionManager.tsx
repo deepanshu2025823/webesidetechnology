@@ -6,6 +6,7 @@ import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { deleteCollectionItem, saveCollectionItem, type ActionState } from "@/app/admin/actions/collections";
 import { Alert, Badge, EmptyState, FieldWrap, PageHeader, SubmitButton, Toggle, inputClass } from "@/components/admin/ui";
 import { ImageInput } from "@/components/admin/ImageInput";
+import { FileInput } from "@/components/admin/FileInput";
 import { IconInput } from "@/components/admin/IconInput";
 import { TagListInput } from "@/components/admin/TagListInput";
 import { Icon } from "@/components/ui/Icon";
@@ -318,6 +319,8 @@ function CollectionForm({
                 </select>
               ) : field.type === "image" ? (
                 <ImageInput name={field.name} defaultValue={String(value ?? "")} folder={collection.slug} />
+              ) : field.type === "file" ? (
+                <FileInput name={field.name} defaultValue={String(value ?? "")} folder={collection.slug} />
               ) : field.type === "taglist" ? (
                 <TagListInput
                   name={field.name}

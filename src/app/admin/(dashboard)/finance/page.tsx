@@ -29,13 +29,26 @@ export default async function FinancePage() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [open, monthPayments, monthExpenses, recentInvoices, recentPayments] = await Promise.all([
+  const [open, monthPayments, monthExpenses, monthOtherIncome, dueEntries, recentInvoices, recentPayments] = await Promise.all([
     prisma.invoice.findMany({
       where: { status: { in: ["SENT", "PARTIALLY_PAID", "OVERDUE"] } },
       include: { client: { select: { name: true } } },
     }),
     prisma.payment.aggregate({ _sum: { amount: true }, where: { paidAt: { gte: monthStart } } }),
-    prisma.expense.aggregate({ _sum: { amount: true }, where: { spentAt: { gte: monthStart } } }),
+    // Settled only, and split by direction: the register carries income too.
+    prisma.expense.aggregate({
+      _sum: { amount: true },
+      where: { direction: "EXPENSE", isSettled: true, spentAt: { gte: monthStart } },
+    }),
+    prisma.expense.aggregate({
+      _sum: { amount: true },
+      where: { direction: "INCOME", isSettled: true, spentAt: { gte: monthStart } },
+    }),
+    prisma.expense.findMany({
+      where: { isSettled: false },
+      orderBy: { dueDate: "asc" },
+      select: { id: true, amount: true, direction: true, dueDate: true },
+    }),
     prisma.invoice.findMany({
       orderBy: { createdAt: "desc" },
       take: 8,
@@ -64,13 +77,33 @@ export default async function FinancePage() {
 
   const collected = monthPayments._sum.amount ?? 0;
   const spent = monthExpenses._sum.amount ?? 0;
+  const otherIncome = monthOtherIncome._sum.amount ?? 0;
   const editable = canEdit(session.role, "finance");
+
+  const dueSoon = dueEntries.filter((e) => e.dueDate && e.dueDate <= new Date(now.getTime() + 7 * 86_400_000));
+  const duePayable = dueEntries
+    .filter((e) => e.direction === "EXPENSE")
+    .reduce((sum, e) => sum + e.amount, 0);
 
   const tiles = [
     { label: "Outstanding", value: formatMoney(outstanding), sub: `${open.length} open invoice${open.length === 1 ? "" : "s"}`, icon: Wallet, href: "/admin/finance/invoices" },
     { label: "Overdue", value: formatMoney(overdueValue), sub: `${overdue.length} past due date`, icon: AlertTriangle, href: "/admin/finance/invoices?status=OVERDUE" },
     { label: "Collected this month", value: formatMoney(collected), sub: "Payments received", icon: Receipt, href: "/admin/finance/payments" },
-    { label: "Spent this month", value: formatMoney(spent), sub: "Recorded expenses", icon: TrendingDown, href: "/admin/finance/expenses" },
+    { label: "Spent this month", value: formatMoney(spent), sub: "Recorded expenses", icon: TrendingDown, href: "/admin/finance/expenses?view=expense" },
+    {
+      label: "Other income this month",
+      value: formatMoney(otherIncome),
+      sub: "Outside invoicing",
+      icon: Wallet,
+      href: "/admin/finance/expenses?view=income",
+    },
+    {
+      label: "Due & expected",
+      value: formatMoney(duePayable),
+      sub: dueSoon.length ? `${dueSoon.length} within 7 days` : `${dueEntries.length} open entr${dueEntries.length === 1 ? "y" : "ies"}`,
+      icon: AlertTriangle,
+      href: "/admin/finance/expenses?view=open",
+    },
   ];
 
   return (
@@ -90,7 +123,7 @@ export default async function FinancePage() {
         }
       />
 
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map(({ label, value, sub, icon: Icon, href }) => (
           <li key={label}>
             <Link

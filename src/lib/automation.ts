@@ -147,6 +147,60 @@ export async function overdueInvoiceSweep(): Promise<{ flagged: number }> {
   return { flagged: overdue.length };
 }
 
+/**
+ * Reminders for money that has not moved yet.
+ *
+ * An entry in the register that is still open, carries a due date and has
+ * reminders switched on tells finance once a day from `remindDaysBefore`
+ * onwards, and keeps telling them while it stays overdue.
+ */
+export async function moneyReminderSweep(): Promise<{ due: number; overdue: number }> {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const entries = await prisma.expense.findMany({
+    where: { isSettled: false, remind: true, dueDate: { not: null } },
+    include: { client: { select: { name: true } } },
+  });
+  if (!entries.length) return { due: 0, overdue: 0 };
+
+  const recipients = await financeUserIds();
+  let due = 0;
+  let overdue = 0;
+
+  for (const entry of entries) {
+    const dueDate = entry.dueDate as Date;
+    const daysLeft = Math.ceil((dueDate.getTime() - startOfToday.getTime()) / 86_400_000);
+    if (daysLeft > entry.remindDaysBefore) continue;
+
+    // One reminder per entry per day, however many times the sweep runs.
+    if (entry.lastRemindedAt && entry.lastRemindedAt.toDateString() === now.toDateString()) continue;
+
+    const isIncome = entry.direction === "INCOME";
+    const amount = `₹${entry.amount.toLocaleString("en-IN")}`;
+    const late = daysLeft < 0;
+
+    await prisma.expense.update({ where: { id: entry.id }, data: { lastRemindedAt: now } });
+
+    await notify({
+      userIds: [entry.recordedById, ...recipients].filter(Boolean) as string[],
+      type: late ? "money_overdue" : "money_due",
+      title: late
+        ? `${entry.title} is ${Math.abs(daysLeft)} day(s) overdue`
+        : `${entry.title} ${isIncome ? "expected" : "due"} in ${daysLeft} day(s)`,
+      body: [amount, entry.category, entry.vendor, entry.client?.name].filter(Boolean).join(" · "),
+      url: "/admin/finance/expenses?view=open",
+      entity: "Expense",
+      entityId: entry.id,
+    });
+
+    if (late) overdue += 1;
+    else due += 1;
+  }
+
+  return { due, overdue };
+}
+
 /** Task due/overdue, lead follow-ups and pending approvals — scope section 18. */
 export async function taskAlertSweep(): Promise<{
   dueTasks: number;

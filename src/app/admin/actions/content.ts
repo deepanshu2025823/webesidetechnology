@@ -149,6 +149,7 @@ export async function saveProject(_prev: ActionState, form: FormData): Promise<A
   };
 
   const serviceIds = form.getAll("serviceIds").map(String).filter(Boolean);
+  const tagNames = (json(form, "tags") as unknown as string[]).filter(Boolean);
 
   try {
     const project = id
@@ -160,6 +161,16 @@ export async function saveProject(_prev: ActionState, form: FormData): Promise<A
       await prisma.projectService.createMany({
         data: serviceIds.map((serviceId) => ({ projectId: project.id, serviceId })),
       });
+    }
+
+    // Tags are shared with the blog, so an existing slug is reused rather than
+    // duplicated under a second id.
+    await prisma.projectTag.deleteMany({ where: { projectId: project.id } });
+    for (const name of tagNames) {
+      const slug = slugify(name);
+      if (!slug) continue;
+      const tag = await prisma.tag.upsert({ where: { slug }, create: { name, slug }, update: { name } });
+      await prisma.projectTag.create({ data: { projectId: project.id, tagId: tag.id } });
     }
   } catch (error) {
     console.error("[admin] saveProject", error);
@@ -174,6 +185,7 @@ export async function saveProject(_prev: ActionState, form: FormData): Promise<A
 export async function deleteProject(id: string) {
   const session = await requireSession();
   await prisma.projectService.deleteMany({ where: { projectId: id } });
+  await prisma.projectTag.deleteMany({ where: { projectId: id } });
   await prisma.testimonial.updateMany({ where: { projectId: id }, data: { projectId: null } });
   await prisma.project.delete({ where: { id } });
   await logActivity(session.id, "delete", "Project", id);
@@ -295,7 +307,9 @@ export async function saveSettings(_prev: ActionState, form: FormData): Promise<
     "gstin", "pan", "bankAccountName", "bankName", "bankAccountNumber", "bankIfsc",
     "bankBranch", "upiId", "upiQr", "paymentNote", "facebook", "instagram",
     "linkedin", "twitter", "youtube", "footerAbout", "ctaTitle", "ctaSubtitle", "ctaButton",
-    "ctaUrl", "videoTitle", "videoSubtitle", "metaTitle", "metaDescription", "metaKeywords", "gaMeasurementId",
+    "ctaUrl", "videoTitle", "videoSubtitle",
+    "chatGreeting", "chatFallback", "chatHandoffPrompt",
+    "metaTitle", "metaDescription", "metaKeywords", "gaMeasurementId",
     "gtmContainerId", "searchConsoleId", "schemaOrgType", "foundingYear",
   ] as const;
 
@@ -306,6 +320,7 @@ export async function saveSettings(_prev: ActionState, form: FormData): Promise<
     videoEnabled: bool(form, "videoEnabled"),
     // Clamped because the grid classes only exist for 1-6 across.
     videoPerRow: Math.max(1, Math.min(6, Number(str(form, "videoPerRow")) || 3)),
+    videoAspect: str(form, "videoAspect") === "WIDE" ? "WIDE" : "REEL",
   };
   for (const key of textKeys) {
     const raw = str(form, key);

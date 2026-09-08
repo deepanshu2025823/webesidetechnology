@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/admin/ui";
 export default async function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [project, services] = await Promise.all([
-    prisma.project.findUnique({ where: { id }, include: { services: true } }),
+    prisma.project.findUnique({ where: { id }, include: { services: true, tags: { include: { tag: true } } } }),
     prisma.service.findMany({ orderBy: { order: "asc" }, select: { id: true, title: true } }),
   ]);
   if (!project) notFound();
@@ -18,6 +18,7 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
     // <input type="date"> needs a bare YYYY-MM-DD value.
     completedAt: project.completedAt ? project.completedAt.toISOString().slice(0, 10) : null,
     serviceIds: project.services.map((s) => s.serviceId),
+    tags: project.tags.map((t) => t.tag.name),
   };
 
   return (

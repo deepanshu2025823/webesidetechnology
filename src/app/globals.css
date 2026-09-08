@@ -44,6 +44,19 @@
 :root {
   --background: #ffffff;
   --foreground: #011460;
+
+  /*
+   * Height of the fixed mobile bar, plus the phone's own safe area. Anything
+   * that must clear it — the footer's legal row, the chat launcher and its
+   * panel — measures against this rather than guessing at a pixel value, so one
+   * change moves them all together.
+   */
+  --mobile-bar: 0px;
+  --bottom-inset: env(safe-area-inset-bottom, 0px);
+}
+
+@media (max-width: 1023px) {
+  :root { --mobile-bar: 3.75rem; }
 }
 
 @layer base {
@@ -84,6 +97,36 @@
 }
 
 @layer components {
+  /*
+   * Everything that has to sit clear of the fixed mobile bar.
+   *
+   * The panel is sized in `dvh`, not `vh`: on a phone `vh` is measured against
+   * the *large* viewport — the one you only get once the browser's own address
+   * bar has scrolled away — so a `vh` height reaches under that bar and the
+   * message box ends up cut off until you drag the page.
+   */
+  .mobile-bar-clear {
+    padding-bottom: calc(var(--mobile-bar) + var(--bottom-inset));
+  }
+
+  .chat-launcher {
+    bottom: calc(var(--mobile-bar) + var(--bottom-inset) + 0.75rem);
+  }
+
+  .chat-panel {
+    /* Above the launcher, which is 3.5rem tall with a 0.75rem gap. */
+    bottom: calc(var(--mobile-bar) + var(--bottom-inset) + 5rem);
+    max-height: calc(100dvh - var(--mobile-bar) - var(--bottom-inset) - 6.5rem);
+  }
+
+  @media (min-width: 1024px) {
+    .chat-launcher { bottom: 1.5rem; }
+    .chat-panel {
+      bottom: 5.75rem;
+      max-height: calc(100dvh - 8rem);
+    }
+  }
+
   /* Thin gold rule used under section eyebrows. */
   .rule-gold::after {
     content: "";

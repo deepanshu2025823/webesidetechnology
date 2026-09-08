@@ -123,6 +123,7 @@ export default async function HomePage() {
           title={settings.videoTitle}
           subtitle={settings.videoSubtitle}
           perRow={settings.videoPerRow}
+          aspect={settings.videoAspect}
         />
       ) : null}
 

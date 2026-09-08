@@ -46,11 +46,14 @@ export async function saveIntegration(_prev: ActionState, form: FormData): Promi
 /** Lets an admin run the nightly sweeps immediately, for testing. */
 export async function runAutomationNow(): Promise<void> {
   const session = await requirePermission("integrations", "write");
-  const { overdueInvoiceSweep, renewalReminderSweep, taskAlertSweep } = await import("@/lib/automation");
+  const { moneyReminderSweep, overdueInvoiceSweep, renewalReminderSweep, taskAlertSweep } = await import(
+    "@/lib/automation"
+  );
 
-  const [renewals, invoices, tasks] = await Promise.all([
+  const [renewals, invoices, money, tasks] = await Promise.all([
     renewalReminderSweep(),
     overdueInvoiceSweep(),
+    moneyReminderSweep(),
     taskAlertSweep(),
   ]);
 
@@ -59,7 +62,7 @@ export async function runAutomationNow(): Promise<void> {
     "run",
     "Automation",
     undefined,
-    `renewals ${renewals.notified}/${renewals.escalated}, invoices ${invoices.flagged}, tasks ${tasks.overdueTasks}`,
+    `renewals ${renewals.notified}/${renewals.escalated}, invoices ${invoices.flagged}, money ${money.due}/${money.overdue}, tasks ${tasks.overdueTasks}`,
   );
 
   revalidatePath("/admin/integrations");

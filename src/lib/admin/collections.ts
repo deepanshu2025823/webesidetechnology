@@ -16,6 +16,8 @@ export type FieldType =
   | "email"
   | "date"
   | "icon"
+  /// a document — PDF, Word, scan — stored like an upload and linked by URL
+  | "file"
   /// string[] stored in a Json column
   | "taglist";
 
@@ -344,6 +346,44 @@ export const COLLECTIONS: Record<string, Collection> = {
     ],
   },
 
+  "placements/partners": {
+    model: "placementPartner",
+    slug: "placements/partners",
+    title: "Placement partners",
+    singular: "Partner",
+    description: "Companies we place candidates with — who to contact, what they hire for, and our fee.",
+    titleField: "name",
+    orderBy: { name: "asc" },
+    module: "placements",
+    fields: [
+      { name: "name", label: "Company", type: "text", required: true, inList: true },
+      { name: "industry", label: "Industry", type: "text", inList: true, placeholder: "IT services" },
+      { name: "city", label: "City", type: "text", inList: true },
+      { name: "website", label: "Website", type: "url" },
+      {
+        name: "hiringFor",
+        label: "Hiring for",
+        type: "taglist",
+        colSpan: 2,
+        placeholder: "e.g. React Developer",
+        help: "Roles they are open for right now.",
+      },
+      { name: "contactName", label: "Contact person", type: "text" },
+      { name: "contactEmail", label: "Contact email", type: "email", inList: true },
+      { name: "contactPhone", label: "Contact phone", type: "text" },
+      {
+        name: "commissionPct",
+        label: "Our fee %",
+        type: "number",
+        defaultValue: 0,
+        help: "Percentage of the candidate's annual CTC, as agreed with them.",
+      },
+      { name: "agreementUrl", label: "Signed agreement", type: "file", colSpan: 2, help: "PDF, Word or a scan." },
+      { name: "isActive", label: "Currently hiring", type: "boolean", defaultValue: true, inList: true },
+      { name: "notes", label: "Notes", type: "textarea", colSpan: 2 },
+    ],
+  },
+
   // ---------------------------------------------------------------- growth network
 
   "influencers": {
@@ -462,6 +502,99 @@ export const COLLECTIONS: Record<string, Collection> = {
         ],
       },
       { name: "isActive", label: "Active", type: "boolean", defaultValue: true, inList: true },
+    ],
+  },
+
+  // ---------------------------------------------------------------- chatbot
+
+  "chatbot": {
+    model: "chatAnswer",
+    slug: "chatbot",
+    title: "Chatbot training",
+    singular: "Answer",
+    description:
+      "What the website assistant replies. Each row is one question: list the words a visitor might use, write the answer, and it goes live immediately. Services, pricing, portfolio and contact are answered from live site data unless a row overrides them.",
+    titleField: "question",
+    orderBy: { order: "asc" },
+    module: "chats",
+    sortable: true,
+    fields: [
+      {
+        name: "question",
+        label: "Question",
+        type: "text",
+        required: true,
+        inList: true,
+        colSpan: 2,
+        placeholder: "Do you offer AMC / maintenance?",
+        help: "Also matched against, so phrase it the way a visitor would.",
+      },
+      {
+        name: "keywords",
+        label: "Trigger words",
+        type: "taglist",
+        colSpan: 2,
+        placeholder: "e.g. maintenance",
+        help: "Any of these appearing in a visitor's message picks this answer. The longest match wins, so add specific phrases as well as single words.",
+      },
+      {
+        name: "reply",
+        label: "Answer",
+        type: "textarea",
+        required: true,
+        colSpan: 2,
+        help: "Plain text. Line breaks are kept, so a bulleted list works.",
+      },
+      {
+        name: "followUps",
+        label: "Follow-up chips",
+        type: "taglist",
+        colSpan: 2,
+        placeholder: "e.g. What does it cost?",
+        help: "Offered as tappable chips after the answer. Each one is sent back as if the visitor had typed it.",
+      },
+      {
+        name: "intent",
+        label: "Replaces built-in answer",
+        type: "select",
+        defaultValue: "",
+        options: [
+          { value: "", label: "Nothing — this is a new question" },
+          { value: "greeting", label: "Greeting" },
+          { value: "services", label: "What do you do" },
+          { value: "pricing", label: "Pricing" },
+          { value: "portfolio", label: "Our work" },
+          { value: "contact", label: "Contact details" },
+          { value: "timeline", label: "How long it takes" },
+          { value: "calculator", label: "Cost calculator" },
+          { value: "unknown", label: "When nothing matches" },
+        ],
+        help: "Use this to take over one of the built-in replies instead of adding a new question.",
+      },
+      {
+        name: "isQuickReply",
+        label: "Show as an opening chip",
+        type: "boolean",
+        defaultValue: false,
+        help: "Offered before the visitor has typed anything. Leave off and the built-in chips are used.",
+      },
+      {
+        name: "handsOff",
+        label: "Hand over to a person after this",
+        type: "boolean",
+        defaultValue: false,
+        help: "Asks for the visitor's details and queues the chat for the team.",
+      },
+      { name: "isActive", label: "Active", type: "boolean", defaultValue: true, inList: true },
+      {
+        name: "hits",
+        label: "Times used",
+        type: "number",
+        defaultValue: 0,
+        inList: true,
+        help: "Counted automatically each time this answer is given — it shows which questions visitors actually ask.",
+      },
+      ORDER_FIELD,
     ],
   },
 

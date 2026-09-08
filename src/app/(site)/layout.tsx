@@ -54,10 +54,12 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         ctaLabel={settings.ctaButton}
         ctaUrl={settings.ctaUrl}
       />
-      {/* Padding keeps the footer clear of the fixed mobile bar. */}
-      <main id="main" className="pb-16 lg:pb-0">
-        {children}
-      </main>
+      {/*
+        The clearance for the fixed mobile bar belongs on the footer, not here —
+        the bar overlaps whatever is last on the page, and that is the footer's
+        legal row rather than the content above it.
+      */}
+      <main id="main">{children}</main>
       <Footer
         settings={settings}
         serviceLinks={flatten(footerServices)}

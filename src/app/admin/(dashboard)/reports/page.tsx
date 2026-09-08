@@ -43,7 +43,12 @@ export default async function ReportsPage({
     prisma.quotation.findMany({ where: { createdAt: { gte: since } }, select: { status: true, total: true } }),
     prisma.invoice.findMany({ select: { status: true, total: true, amountPaid: true, dueDate: true } }),
     prisma.payment.findMany({ where: { paidAt: { gte: since } }, select: { amount: true } }),
-    prisma.expense.findMany({ where: { spentAt: { gte: since } }, select: { amount: true, serviceId: true } }),
+    // Profitability counts money actually spent, so income entries and
+    // anything still unsettled are excluded.
+    prisma.expense.findMany({
+      where: { direction: "EXPENSE", isSettled: true, spentAt: { gte: since } },
+      select: { amount: true, serviceId: true },
+    }),
     prisma.clientProject.findMany({ select: { stage: true, health: true, budget: true, serviceId: true } }),
     prisma.task.findMany({ select: { status: true, assigneeId: true, dueDate: true } }),
     prisma.renewal.findMany({ select: { status: true, amount: true, expiryDate: true } }),

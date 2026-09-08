@@ -53,6 +53,10 @@ export const DEFAULT_SETTINGS = {
   videoTitle: "Work in motion",
   videoSubtitle: "",
   videoPerRow: 3,
+  videoAspect: "REEL",
+  chatGreeting: "",
+  chatFallback: "",
+  chatHandoffPrompt: "",
   metaTitle: "",
   metaDescription: "",
   metaKeywords: "",
@@ -126,7 +130,12 @@ export const getProjects = cache(async (opts?: { featuredOnly?: boolean; take?: 
     where: { status: "PUBLISHED", ...(opts?.featuredOnly ? { isFeatured: true } : {}) },
     orderBy: [{ order: "asc" }, { completedAt: "desc" }],
     take: opts?.take,
-    include: { services: { include: { service: true } } },
+    include: {
+      // Only published services are included: an unpublished service has no page
+      // to link to, and must not appear as a filter on the portfolio.
+      services: { where: { service: { status: "PUBLISHED" } }, include: { service: true } },
+      tags: { include: { tag: true } },
+    },
   }),
 );
 

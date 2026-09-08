@@ -15,6 +15,7 @@ const TABS = [
   { id: "social", label: "Social" },
   { id: "cta", label: "Call to action" },
   { id: "videos", label: "Video carousel" },
+  { id: "chatbot", label: "Chat assistant" },
   { id: "seo", label: "SEO & analytics" },
 ] as const;
 
@@ -284,6 +285,22 @@ export function SettingsForm({ settings }: { settings: Settings }) {
                 ))}
               </select>
             </FieldWrap>
+            <FieldWrap
+              label="Card shape"
+              htmlFor="videoAspect"
+              help="Reels and YouTube Shorts are filmed portrait; landscape videos need the wide shape."
+            >
+              <select
+                id="videoAspect"
+                name="videoAspect"
+                defaultValue={settings.videoAspect === "WIDE" ? "WIDE" : "REEL"}
+                className={inputClass}
+              >
+                <option value="REEL">Reel — 9:16 portrait</option>
+                <option value="WIDE">Wide — 16:9 landscape</option>
+              </select>
+            </FieldWrap>
+
             <FieldWrap label="Section sub-heading" htmlFor="videoSubtitle" className="sm:col-span-2">
               <textarea
                 id="videoSubtitle"
@@ -293,6 +310,68 @@ export function SettingsForm({ settings }: { settings: Settings }) {
                 className={inputClass}
               />
             </FieldWrap>
+          </div>
+        </Card>
+      </div>
+
+      <div className={tab === "chatbot" ? "space-y-6" : "hidden"}>
+        <Card
+          title="Chat assistant"
+          description="The three lines the assistant says on its own. Everything it answers is managed under Operations → Chatbot training."
+        >
+          <div className="grid gap-5">
+            <FieldWrap
+              label="Opening message"
+              htmlFor="chatGreeting"
+              help="Shown the moment a visitor opens the chat. Leave blank for the default."
+            >
+              <textarea
+                id="chatGreeting"
+                name="chatGreeting"
+                rows={3}
+                maxLength={600}
+                placeholder="Hello! I'm Sahab, the assistant at Sahab India. Ask me about our services, pricing or recent work — or I can put you through to the team."
+                defaultValue={value("chatGreeting")}
+                className={inputClass}
+              />
+            </FieldWrap>
+
+            <FieldWrap
+              label="When it doesn't understand"
+              htmlFor="chatFallback"
+              help="Said when no trained answer and no built-in topic matches."
+            >
+              <textarea
+                id="chatFallback"
+                name="chatFallback"
+                rows={3}
+                maxLength={600}
+                placeholder="I'm not sure I follow — I can help with services, pricing, our work and contact details."
+                defaultValue={value("chatFallback")}
+                className={inputClass}
+              />
+            </FieldWrap>
+
+            <FieldWrap
+              label="Asking to hand over"
+              htmlFor="chatHandoffPrompt"
+              help="Said just before the visitor is asked for their name and number."
+            >
+              <textarea
+                id="chatHandoffPrompt"
+                name="chatHandoffPrompt"
+                rows={3}
+                maxLength={600}
+                placeholder="Of course — let me get someone from the team. Could you leave your name and a phone number or email so they can reach you?"
+                defaultValue={value("chatHandoffPrompt")}
+                className={inputClass}
+              />
+            </FieldWrap>
+
+            <p className="rounded-xl bg-gold-50 px-4 py-3 text-sm text-gold-900">
+              Services, pricing, portfolio and contact answers are built from live site data, so they stay correct on
+              their own. To change one of those, add a trained answer and set “Replaces built-in answer”.
+            </p>
           </div>
         </Card>
       </div>

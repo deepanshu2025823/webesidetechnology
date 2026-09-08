@@ -801,15 +801,17 @@ export const DATASETS: Record<string, Dataset> = {
 
   expenses: defineDataset({
     key: "expenses",
-    label: "Expenses",
-    description: "Spend by category, vendor and project.",
+    label: "Income & expenses",
+    description: "Every entry in the money register, by category, party and project.",
     module: "finance",
-    searchHint: "Search title, vendor, category…",
+    searchHint: "Search title, party, category…",
+    statuses: chips(["INCOME", "EXPENSE"]),
     query: (f) =>
       prisma.expense.findMany({
         where: {
+          ...(f.status && f.status !== "ALL" ? { direction: f.status as never } : {}),
           ...(f.client ? { clientId: f.client } : {}),
-          ...(search(f.q, ["title", "vendor", "category", "notes"]) ?? {}),
+          ...(search(f.q, ["title", "vendor", "category", "reference", "notes"]) ?? {}),
           ...(between(f.from, f.to) ? { spentAt: between(f.from, f.to) } : {}),
         },
         orderBy: { spentAt: "desc" },
@@ -821,17 +823,31 @@ export const DATASETS: Record<string, Dataset> = {
         },
       }),
     columns: [
-      { label: "Spent On", value: (r) => r.spentAt },
+      { label: "Date", value: (r) => r.spentAt },
+      { label: "Type", value: (r) => (r.direction === "INCOME" ? "Income" : "Expense") },
       { label: "Title", value: (r) => r.title },
       { label: "Category", value: (r) => r.category },
-      { label: "Vendor", value: (r) => r.vendor },
+      { label: "Party", value: (r) => r.vendor },
       { label: "Amount", value: (r) => money(r.amount) },
+      { label: "Settled", value: (r) => (r.isSettled ? "Yes" : "No") },
+      { label: "Due", value: (r) => r.dueDate },
+      { label: "Mode", value: (r) => r.paymentMode },
+      { label: "Reference", value: (r) => r.reference },
       { label: "Client", value: (r) => r.client?.name },
       { label: "Project", value: (r) => r.project?.name },
       { label: "Recorded By", value: (r) => r.recordedBy?.name },
       { label: "Notes", value: (r) => r.notes },
     ],
-    stats: (rows) => [{ label: "Spend", value: `₹${money(total(rows, "amount"))}` }],
+    stats: (rows) => {
+      const settled = rows.filter((r) => r.isSettled);
+      const income = total(settled.filter((r) => r.direction === "INCOME"), "amount");
+      const spend = total(settled.filter((r) => r.direction === "EXPENSE"), "amount");
+      return [
+        { label: "Income", value: `₹${money(income)}` },
+        { label: "Spend", value: `₹${money(spend)}` },
+        { label: "Net", value: `₹${money(income - spend)}` },
+      ];
+    },
   }),
 
   renewals: defineDataset({

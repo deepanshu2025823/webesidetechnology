@@ -62,7 +62,7 @@ All seven phases of the scope document, under `/admin`.
 | **Invoices** | Standard, proforma, milestone and recurring; quotation-to-invoice in one click; print/PDF carrying client contact, GSTIN, per-line billing cycle and the owner's bank/UPI/QR details; status follows the money |
 | **Payments** | Mode, reference and date; part payments update the invoice status and balance automatically |
 | **Credit notes** | Adjustments that reduce the payable amount |
-| **Expenses** | Costs attributed to a client, project or service — the other half of profitability |
+| **Income & expenses** | One register for every rupee that does not move through an invoice — academy fees, placement commission, salaries, rent, subscriptions, ad spend — categorised per direction, attributed to a client, project or service, and marked settled or still due. An open entry carries a due date, an optional recurrence and a reminder the nightly sweep raises |
 | **Receivables** | Outstanding totals and a 30/60/90-day ageing report |
 | **Renewals** | Domains, hosting, SSL, AMC, retainers, ad management and wallet-based services, with reminders at 90/60/30/15/7/1 days, escalation past expiry, low-balance alerts and one-click invoicing |
 
@@ -83,7 +83,16 @@ All seven phases of the scope document, under `/admin`.
 | **Employees** | Department, designation, skills and reporting line |
 | **Attendance** | Explicit self or manager marking with correction — never inferred from device activity |
 | **Leave** | Requests, approval, and approved leave writing through to attendance |
-| **Payroll** | Salary structures with effective dates, draft payslips generated from structure and attendance, incentives and bonuses, approve-then-pay |
+| **Payroll** | Salary structures with effective dates, draft payslips generated from structure and attendance, incentives and bonuses, approve-then-pay, and a printable payslip carrying the earnings breakdown and net pay in words |
+| **Letters** | Offer, internship, experience, relieving, confirmation and appreciation letters. Wording is generated from the record so every certificate of a type reads alike; references are numbered per type per year (`SI/INT/2026/0004`) and each one prints on the company letterhead |
+
+### Placements
+
+| Section | Covers |
+| --- | --- |
+| **Candidates** | Academy students and outside applicants in one pipeline — CV uploaded and stored, skills, experience, expected CTC, notice period and status |
+| **Placement partners** | The companies we place with: contact, the roles they are hiring for, our fee as a percentage of CTC, and the signed agreement |
+| **Submissions** | One candidate put forward to one partner for one role, moved through sent → shortlisted → interview → offered → placed. An accepted offer marks the candidate placed |
 
 ### Phase 5 — Influencers and partners
 
@@ -101,7 +110,7 @@ All seven phases of the scope document, under `/admin`.
 | **Notifications** | In-app inbox for every alert: task due and overdue, lead follow-ups, renewals, overdue invoices, approvals, rewards |
 | **Message templates** | Email, WhatsApp and SMS copy with `{{placeholders}}` |
 | **Integrations** | Credential storage and enable switches for WhatsApp, SMS, IVR, Meta Ads, Google Ads, payment gateway, Google Calendar and accounting |
-| **Automation** | `/api/cron/daily` runs the renewal, invoice and task sweeps; "Run now" triggers the same code from admin |
+| **Automation** | `/api/cron/daily` runs the renewal, invoice, money-reminder and task sweeps; "Run now" triggers the same code from admin. Each reminder fires once a day per record, however often the sweep runs |
 
 ### Phase 7 — Client portal and analytics
 
@@ -127,7 +136,8 @@ the route guard in `src/middleware.ts` and every server action.
 | Service Team Lead | Assigned projects, task review |
 | Team Member | Only their own assigned tasks |
 | Finance / Accounts | Read access to clients, quotations, projects |
-| HR / Admin, Influencer / Partner Manager | Dashboard today; their modules arrive in later phases |
+| HR / Admin | Employees, attendance, leave, payroll, letters and placements |
+| Influencer / Partner Manager | Influencers, referral partners, campaigns and events |
 | Website Editor | Website content only |
 
 Add someone under **Team access**, pick a role, and the panel reshapes itself
@@ -143,12 +153,14 @@ Everything below is editable in `/admin` and appears on the site immediately.
 | --- | --- |
 | **Subscribers** | Newsletter sign-ups, exportable to CSV |
 | **Services** | Full landing page per service: content, features, workflow, pricing, deliverables, SEO |
-| **Portfolio** | Case studies with challenge, solution, gallery, outcome numbers and linked services |
+| **Portfolio** | Case studies with challenge, solution, gallery, outcome numbers, linked services and tags. The public page filters by published service and by tag, counted live from what is on it |
 | **Blog** | Posts with a rich-text editor, categories, tags, scheduling and per-post SEO |
 | **Pages** | Standalone pages (About, Privacy, Terms) on their own URLs |
 | **Home page** | Hero slides, stats, process steps, testimonials, client logos, FAQs |
 | **Site** | Team, navigation menus, media library, admin users |
-| **Settings & SEO** | Brand, logos, contact details, billing & payments (GSTIN, PAN, bank, UPI + QR), socials, CTA band, default metadata, analytics, index switch |
+| **Video carousel** | Reels and Shorts in 9:16 by default (switchable to 16:9), playing in a lightbox with a link out to the source |
+| **Chatbot training** | What the site assistant answers: one row per question with the words that trigger it, the reply, follow-up chips, and an optional override of a built-in topic. Services, pricing, portfolio and contact still answer from live site data unless a row claims them |
+| **Settings & SEO** | Brand, logos, contact details, billing & payments (GSTIN, PAN, bank, UPI + QR), socials, CTA band, chat assistant copy, default metadata, analytics, index switch |
 
 ---
 

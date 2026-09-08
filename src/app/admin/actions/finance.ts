@@ -356,26 +356,74 @@ export async function sendPaymentReminder(invoiceId: string): Promise<void> {
   refreshInvoice(invoiceId);
 }
 
-// ------------------------------------------------------------------ expenses
+// ------------------------------------- income and expenses (money register)
+
+const RECURRENCES = new Set(["NONE", "WEEKLY", "MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY"]);
+
+/** Days to add for one turn of a recurring entry. */
+const RECURRENCE_MONTHS: Record<string, number> = {
+  MONTHLY: 1,
+  QUARTERLY: 3,
+  HALF_YEARLY: 6,
+  YEARLY: 12,
+};
+
+/**
+ * The date a recurring entry next falls due after `from`.
+ *
+ * Not exported: a "use server" module may only export async functions, and
+ * nothing outside this file needs it.
+ */
+function nextOccurrence(from: Date, recurrence: string): Date | null {
+  if (recurrence === "WEEKLY") {
+    const next = new Date(from);
+    next.setDate(next.getDate() + 7);
+    return next;
+  }
+
+  const months = RECURRENCE_MONTHS[recurrence];
+  if (!months) return null;
+
+  const next = new Date(from);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
 
 export async function saveExpense(_prev: ActionState, form: FormData): Promise<ActionState> {
   const session = await requirePermission("finance", "write");
   const id = str(form, "id");
   const title = str(form, "title");
   const amount = int(form, "amount");
+  const direction = str(form, "direction") === "INCOME" ? "INCOME" : "EXPENSE";
+  const kind = direction === "INCOME" ? "income" : "expense";
 
-  if (!title) return { error: "Give the expense a title." };
+  if (!title) return { error: `Give the ${kind} a title.` };
   if (amount <= 0) return { error: "Enter an amount." };
 
+  const recurrenceRaw = str(form, "recurrence");
+  const isSettled = str(form, "isSettled") !== "false";
+  const dueDate = date(form, "dueDate");
+
   const data = {
+    direction: direction as "INCOME" | "EXPENSE",
     title,
     amount,
     category: str(form, "category") || "General",
     vendor: str(form, "vendor"),
+    paymentMode: str(form, "paymentMode"),
+    reference: str(form, "reference"),
     clientId: nullable(form, "clientId"),
     projectId: nullable(form, "projectId"),
     serviceId: nullable(form, "serviceId"),
     spentAt: date(form, "spentAt") ?? new Date(),
+    dueDate,
+    isSettled,
+    // A reminder needs something to remind about, so it only sticks on an entry
+    // that is still open and carries a date.
+    remind: !isSettled && Boolean(dueDate) && str(form, "remind") === "on",
+    remindDaysBefore: Math.max(0, Math.min(90, int(form, "remindDaysBefore", 3))),
+    recurrence: (RECURRENCES.has(recurrenceRaw) ? recurrenceRaw : "NONE") as
+      | "NONE" | "WEEKLY" | "MONTHLY" | "QUARTERLY" | "HALF_YEARLY" | "YEARLY",
     notes: str(form, "notes") || null,
     recordedById: session.id,
   };
@@ -385,12 +433,61 @@ export async function saveExpense(_prev: ActionState, form: FormData): Promise<A
     else await prisma.expense.create({ data });
   } catch (error) {
     console.error("[finance] saveExpense", error);
-    return { error: "Could not save this expense." };
+    return { error: `Could not save this ${kind}.` };
   }
 
   await logActivity(session.id, id ? "update" : "create", "Expense", id || undefined, title);
   revalidatePath("/admin/finance/expenses");
-  return { ok: true, message: "Expense saved." };
+  revalidatePath("/admin/finance");
+  return { ok: true, message: `${direction === "INCOME" ? "Income" : "Expense"} saved.` };
+}
+
+/**
+ * Marks an open entry as received or paid.
+ *
+ * A recurring entry immediately schedules its next turn, so a monthly rent or
+ * retainer is never forgotten between one settlement and the next.
+ */
+export async function settleExpense(id: string): Promise<void> {
+  const session = await requirePermission("finance", "write");
+
+  const entry = await prisma.expense.findUnique({ where: { id } });
+  if (!entry || entry.isSettled) return;
+
+  await prisma.expense.update({
+    where: { id },
+    data: { isSettled: true, spentAt: new Date(), remind: false },
+  });
+
+  const due = entry.dueDate ?? entry.spentAt;
+  const next = nextOccurrence(due, entry.recurrence);
+  if (next) {
+    await prisma.expense.create({
+      data: {
+        direction: entry.direction,
+        title: entry.title,
+        amount: entry.amount,
+        category: entry.category,
+        vendor: entry.vendor,
+        paymentMode: entry.paymentMode,
+        clientId: entry.clientId,
+        projectId: entry.projectId,
+        serviceId: entry.serviceId,
+        spentAt: next,
+        dueDate: next,
+        isSettled: false,
+        remind: entry.remind,
+        remindDaysBefore: entry.remindDaysBefore,
+        recurrence: entry.recurrence,
+        notes: entry.notes,
+        recordedById: session.id,
+      },
+    });
+  }
+
+  await logActivity(session.id, "update", "Expense", id, "settled");
+  revalidatePath("/admin/finance/expenses");
+  revalidatePath("/admin/finance");
 }
 
 export async function deleteExpense(id: string): Promise<void> {
@@ -398,6 +495,7 @@ export async function deleteExpense(id: string): Promise<void> {
   await prisma.expense.delete({ where: { id } });
   await logActivity(session.id, "delete", "Expense", id);
   revalidatePath("/admin/finance/expenses");
+  revalidatePath("/admin/finance");
 }
 
 /** Manual trigger for the same sweep the scheduler runs nightly. */

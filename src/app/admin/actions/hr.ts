@@ -289,3 +289,126 @@ export async function saveIncentive(form: FormData): Promise<void> {
   await logActivity(session.id, "create", "Incentive", employeeId, reason);
   revalidatePath("/admin/hr/payroll");
 }
+
+// -------------------------------------------------------------------- letters
+
+const LETTER_PREFIX: Record<string, string> = {
+  OFFER: "OFR",
+  INTERNSHIP: "INT",
+  EXPERIENCE: "EXP",
+  RELIEVING: "REL",
+  CONFIRMATION: "CNF",
+  APPRECIATION: "APR",
+};
+
+/**
+ * The next reference for a letter type, e.g. SI/INT/2026/0004.
+ *
+ * Numbered per type and per year so a run of internship certificates reads as a
+ * sequence, and the number on a printed letter can be traced back years later.
+ */
+async function nextLetterRef(type: string) {
+  const year = new Date().getFullYear();
+  const prefix = `SI/${LETTER_PREFIX[type] ?? "LTR"}/${year}/`;
+
+  const existing = await prisma.hrLetter.findMany({
+    where: { refNo: { startsWith: prefix } },
+    select: { refNo: true },
+  });
+
+  const taken = new Set(existing.map((r) => r.refNo));
+  let n = taken.size + 1;
+  let ref = `${prefix}${String(n).padStart(4, "0")}`;
+  while (taken.has(ref)) {
+    n += 1;
+    ref = `${prefix}${String(n).padStart(4, "0")}`;
+  }
+  return ref;
+}
+
+export async function saveLetter(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const session = await requirePermission("team", "write");
+  const id = str(form, "id");
+  const type = str(form, "type") || "EXPERIENCE";
+  const employeeId = str(form, "employeeId");
+  const candidateId = str(form, "candidateId");
+
+  // The name is copied onto the letter rather than read through the relation:
+  // a certificate has to keep saying what it said on the day it was issued.
+  let personName = str(form, "personName");
+  let personEmail = str(form, "personEmail");
+  let designation = str(form, "designation");
+  let department = str(form, "department");
+
+  if (employeeId) {
+    const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!employee) return { error: "That employee no longer exists." };
+    personName ||= employee.name;
+    personEmail ||= employee.email;
+    designation ||= employee.designation;
+    department ||= employee.department;
+  } else if (candidateId) {
+    const candidate = await prisma.candidate.findUnique({ where: { id: candidateId } });
+    if (!candidate) return { error: "That candidate no longer exists." };
+    personName ||= candidate.name;
+    personEmail ||= candidate.email;
+  }
+
+  if (!personName) return { error: "Pick a person, or type the name the letter is for." };
+
+  const amount = int(form, "amount");
+  const data = {
+    type: type as never,
+    employeeId: employeeId || null,
+    candidateId: candidateId || null,
+    personName,
+    personEmail,
+    personAddress: str(form, "personAddress"),
+    designation,
+    department,
+    startDate: date(form, "startDate"),
+    endDate: date(form, "endDate"),
+    amount: amount > 0 ? amount : null,
+    bodyOverride: str(form, "bodyOverride") || null,
+    remarks: str(form, "remarks") || null,
+    place: str(form, "place"),
+    signatoryName: str(form, "signatoryName"),
+    signatoryRole: str(form, "signatoryRole"),
+    status: (str(form, "status") || "DRAFT") as never,
+    issuedAt: date(form, "issuedAt") ?? new Date(),
+  };
+
+  try {
+    if (id) {
+      await prisma.hrLetter.update({ where: { id }, data });
+    } else {
+      await prisma.hrLetter.create({
+        data: { ...data, refNo: await nextLetterRef(type), issuedById: session.id },
+      });
+    }
+  } catch (error) {
+    console.error("[hr] saveLetter", error);
+    return { error: "Could not save this letter." };
+  }
+
+  await logActivity(session.id, id ? "update" : "create", "HrLetter", id || undefined, `${type} — ${personName}`);
+  revalidatePath("/admin/hr/letters");
+  return { ok: true, message: "Letter saved." };
+}
+
+export async function setLetterStatus(id: string, form: FormData): Promise<void> {
+  const session = await requirePermission("team", "write");
+  const status = str(form, "status");
+  if (!["DRAFT", "ISSUED", "REVOKED"].includes(status)) return;
+
+  await prisma.hrLetter.update({ where: { id }, data: { status: status as never } });
+  await logActivity(session.id, "update", "HrLetter", id, status);
+  revalidatePath("/admin/hr/letters");
+}
+
+export async function deleteLetter(id: string): Promise<void> {
+  const session = await requirePermission("team", "write");
+  await prisma.hrLetter.delete({ where: { id } });
+  await logActivity(session.id, "delete", "HrLetter", id);
+  revalidatePath("/admin/hr/letters");
+}

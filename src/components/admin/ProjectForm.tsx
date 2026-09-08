@@ -33,6 +33,7 @@ type ProjectValue = {
   metaDescription: string;
   metaKeywords: string;
   serviceIds: string[];
+  tags: string[];
 };
 
 export function ProjectForm({
@@ -168,6 +169,13 @@ export function ProjectForm({
                 { key: "label", label: "Label (e.g. organic traffic)" },
               ]}
             />
+          </Card>
+
+          <Card
+            title="Tags"
+            description="Filter chips on the portfolio page. They share the blog's tags, so a name used there means the same thing here."
+          >
+            <TagListInput name="tags" defaultValue={project?.tags ?? []} placeholder="e.g. Ecommerce" />
           </Card>
 
           <Card title="Stack & channels">

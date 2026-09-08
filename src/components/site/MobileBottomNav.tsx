@@ -35,17 +35,19 @@ export function MobileBottomNav({
   return (
     <nav
       aria-label="Quick navigation"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-navy-950/95 backdrop-blur lg:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      // The row is pinned to --mobile-bar rather than sized by its contents, so
+      // the clearance the footer and the chat widget reserve is always exactly
+      // the height this occupies.
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-navy-950/95 pb-[var(--bottom-inset)] backdrop-blur lg:hidden"
     >
-      <ul className="mx-auto grid max-w-lg grid-cols-5">
+      <ul className="mx-auto grid h-[var(--mobile-bar)] max-w-lg grid-cols-5">
         {links.map(({ href, label, icon: Icon }) => (
           <li key={href}>
             <Link
               href={href}
               aria-current={isActive(href) ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors",
+                "flex h-full flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors",
                 isActive(href) ? "text-gold-300" : "text-navy-300 hover:text-white",
               )}
             >
@@ -59,7 +61,7 @@ export function MobileBottomNav({
           {phone ? (
             <a
               href={`tel:${phone.replace(/[^\d+]/g, "")}`}
-              className="flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium text-navy-300 transition-colors hover:text-gold-300"
+              className="flex h-full flex-col items-center justify-center gap-1 text-[10px] font-medium text-navy-300 transition-colors hover:text-gold-300"
             >
               <Phone className="size-5" aria-hidden />
               Call
@@ -67,7 +69,7 @@ export function MobileBottomNav({
           ) : (
             <Link
               href="/contact"
-              className="flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium text-navy-300 hover:text-gold-300"
+              className="flex h-full flex-col items-center justify-center gap-1 text-[10px] font-medium text-navy-300 hover:text-gold-300"
             >
               <Phone className="size-5" aria-hidden />
               Contact
@@ -81,7 +83,7 @@ export function MobileBottomNav({
               href={`https://wa.me/${waDigits}?text=${waText}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium text-[#25D366] transition-opacity hover:opacity-80"
+              className="flex h-full flex-col items-center justify-center gap-1 text-[10px] font-medium text-[#25D366] transition-opacity hover:opacity-80"
             >
               <WhatsappIcon className="size-5" aria-hidden />
               WhatsApp
@@ -89,7 +91,7 @@ export function MobileBottomNav({
           ) : (
             <Link
               href="/contact"
-              className="flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium text-gold-300"
+              className="flex h-full flex-col items-center justify-center gap-1 text-[10px] font-medium text-gold-300"
             >
               <Sparkles className="size-5" aria-hidden />
               Enquire

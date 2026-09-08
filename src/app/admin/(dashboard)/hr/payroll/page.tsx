@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Printer } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
@@ -159,6 +161,7 @@ export default async function PayrollPage({
                   <th className="px-5 py-3 text-right font-medium">Deductions</th>
                   <th className="px-5 py-3 text-right font-medium">Net pay</th>
                   <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 font-medium">Slip</th>
                   {editable ? <th className="px-5 py-3 text-right font-medium">Action</th> : null}
                 </tr>
               </thead>
@@ -177,6 +180,15 @@ export default async function PayrollPage({
                     <td className="px-5 py-3.5 text-right font-semibold text-navy-900">{formatMoney(slip.netPay)}</td>
                     <td className="px-5 py-3.5">
                       <Badge tone={TONE[slip.status]}>{pretty(slip.status)}</Badge>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <Link
+                        href={`/admin/print/payslip/${slip.id}`}
+                        target="_blank"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-navy-900/15 px-2.5 py-1.5 text-xs font-medium text-navy-800 hover:border-gold-500 hover:bg-gold-50"
+                      >
+                        <Printer className="size-3.5" aria-hidden /> Print
+                      </Link>
                     </td>
                     {editable ? (
                       <td className="px-5 py-3.5">

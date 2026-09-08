@@ -8,9 +8,9 @@
  */
 
 export type ParsedVideo =
-  | { kind: "youtube"; id: string; embedUrl: string; poster: string }
-  | { kind: "vimeo"; id: string; embedUrl: string; poster: string }
-  | { kind: "file"; embedUrl: string; poster: string };
+  | { kind: "youtube"; id: string; embedUrl: string; poster: string; portraitPoster: string }
+  | { kind: "vimeo"; id: string; embedUrl: string; poster: string; portraitPoster: string }
+  | { kind: "file"; embedUrl: string; poster: string; portraitPoster: string };
 
 const YOUTUBE_HOSTS = new Set(["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be"]);
 const VIMEO_HOSTS = new Set(["vimeo.com", "www.vimeo.com", "player.vimeo.com"]);
@@ -44,6 +44,11 @@ export function parseVideo(rawUrl: string): ParsedVideo | null {
       // `rel=0` keeps the end screen on our own channel rather than a competitor's.
       embedUrl: `https://www.youtube-nocookie.com/embed/${clean}?autoplay=1&rel=0`,
       poster: `https://i.ytimg.com/vi/${clean}/hqdefault.jpg`,
+      // hqdefault is always 4:3, so a Short arrives pillarboxed inside black
+      // bars. `oardefault` is YouTube's original-aspect-ratio still — portrait
+      // for a Short — but it does not exist for every video, so the caller
+      // falls back to `poster` if it fails to load.
+      portraitPoster: `https://i.ytimg.com/vi/${clean}/oardefault.jpg`,
     };
   }
 
@@ -56,8 +61,9 @@ export function parseVideo(rawUrl: string): ParsedVideo | null {
       embedUrl: `https://player.vimeo.com/video/${id}?autoplay=1`,
       // Vimeo's poster needs an API call, so a custom thumbnail is preferred.
       poster: "",
+      portraitPoster: "",
     };
   }
 
-  return { kind: "file", embedUrl: raw, poster: "" };
+  return { kind: "file", embedUrl: raw, poster: "", portraitPoster: "" };
 }

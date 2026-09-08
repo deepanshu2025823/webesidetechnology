@@ -5,7 +5,8 @@ import { Loader2, MessageCircle, Send, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Message = { id: string; role: string; body: string; at: string };
-type Suggestion = { label: string; intent: string };
+/** `text` is what a taught chip sends; built-in chips fall back to INTENT_TEXT. */
+type Suggestion = { label: string; intent: string; text?: string };
 
 const STORAGE_KEY = "sahab-chat-token";
 const POLL_MS = 5000;
@@ -198,7 +199,7 @@ export function ChatWidget({ siteName }: { siteName: string }) {
         }}
         aria-label={open ? "Close chat" : `Chat with ${siteName}`}
         aria-expanded={open}
-        className="fixed bottom-20 right-4 z-50 grid size-14 place-items-center rounded-full bg-navy-900 text-gold-300 shadow-brand transition-transform hover:scale-105 lg:bottom-6 lg:right-6"
+        className="chat-launcher fixed right-4 z-50 grid size-14 place-items-center rounded-full bg-navy-900 text-gold-300 shadow-brand transition-transform hover:scale-105 lg:right-6"
       >
         {open ? <X className="size-6" aria-hidden /> : <MessageCircle className="size-6" aria-hidden />}
         {unread && !open ? (
@@ -213,7 +214,7 @@ export function ChatWidget({ siteName }: { siteName: string }) {
           ref={panel}
           role="dialog"
           aria-label={`Chat with ${siteName}`}
-          className="fixed inset-x-3 bottom-36 z-50 flex max-h-[70vh] flex-col overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-brand sm:inset-x-auto sm:right-4 sm:w-96 lg:bottom-24 lg:right-6"
+          className="chat-panel fixed inset-x-3 z-50 flex flex-col overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-brand sm:inset-x-auto sm:right-4 sm:w-96 lg:right-6"
         >
           <header className="flex items-center gap-3 bg-navy-900 px-4 py-3.5 text-white">
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-gold-600 font-display text-lg font-bold text-navy-950">
@@ -278,7 +279,7 @@ export function ChatWidget({ siteName }: { siteName: string }) {
                   <button
                     key={suggestion.intent}
                     type="button"
-                    onClick={() => send(INTENT_TEXT[suggestion.intent] ?? suggestion.label)}
+                    onClick={() => send(suggestion.text ?? INTENT_TEXT[suggestion.intent] ?? suggestion.label)}
                     className="rounded-full border border-navy-900/15 bg-white px-3 py-1.5 text-xs font-medium text-navy-800 transition-colors hover:border-gold-500 hover:bg-gold-50"
                   >
                     {suggestion.label}

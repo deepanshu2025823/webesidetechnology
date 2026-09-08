@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import {
   BadgeIndianRupee,
   BarChart3,
+  Bot,
   Briefcase,
   Building2,
   Calculator,
@@ -16,6 +17,7 @@ import {
   Clapperboard,
   FileSignature,
   FileText,
+  FileBadge,
   Files,
   Folder,
   FolderOpen,
@@ -39,12 +41,14 @@ import {
   RefreshCw,
   Route,
   Search,
+  ScrollText,
   Settings,
   Sparkles,
   Star,
   Tags,
   Target,
   TrendingDown,
+  UserCheck,
   UserCog,
   Users,
   Wallet,
@@ -65,6 +69,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard, module: "dashboard" },
       { href: "/admin/leads", label: "Leads", icon: Target, module: "leads" },
       { href: "/admin/chats", label: "Live chat", icon: MessageCircle, module: "chats" },
+      { href: "/admin/chatbot", label: "Chatbot training", icon: Bot, module: "chats" },
       { href: "/admin/clients", label: "Clients", icon: Building2, module: "clients" },
       { href: "/admin/quotations", label: "Quotations", icon: FileSignature, module: "quotations" },
       { href: "/admin/client-projects", label: "Projects", icon: Briefcase, module: "projects" },
@@ -76,7 +81,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     items: [
       { href: "/admin/finance", label: "Finance", icon: Wallet, module: "finance" },
       { href: "/admin/finance/invoices", label: "Invoices", icon: Receipt, module: "finance" },
-      { href: "/admin/finance/expenses", label: "Expenses", icon: TrendingDown, module: "finance" },
+      { href: "/admin/finance/expenses", label: "Income & expenses", icon: TrendingDown, module: "finance" },
       { href: "/admin/renewals", label: "Renewals", icon: RefreshCw, module: "renewals" },
     ],
   },
@@ -97,7 +102,10 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/admin/hr/employees", label: "Employees", icon: Users, module: "team" },
       { href: "/admin/hr/attendance", label: "Attendance", icon: CalendarCheck, module: "team" },
       { href: "/admin/hr/leave", label: "Leave", icon: Plane, module: "team" },
-      { href: "/admin/hr/payroll", label: "Payroll", icon: BadgeIndianRupee, module: "payroll" },
+      { href: "/admin/hr/payroll", label: "Payroll & slips", icon: BadgeIndianRupee, module: "payroll" },
+      { href: "/admin/hr/letters", label: "Letters", icon: ScrollText, module: "team" },
+      { href: "/admin/placements", label: "Placements", icon: UserCheck, module: "placements" },
+      { href: "/admin/placements/partners", label: "Placement partners", icon: FileBadge, module: "placements" },
     ],
   },
   {
@@ -169,11 +177,25 @@ export function Sidebar({ user }: { user: { name: string; email: string; role: R
     (g) => g.items.length,
   );
 
-  const isActive = (href: string) => {
-    if (href === "/admin") return pathname === "/admin";
-    // /admin/projects (portfolio) must not light up for /admin/client-projects
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
+  /*
+   * Only the closest match lights up.
+   *
+   * Several sections nest — /admin/finance under /admin/finance/invoices,
+   * /admin/placements under /admin/placements/partners — and highlighting every
+   * ancestor makes the sidebar look like the user is in three places at once.
+   * The longest href that the current path sits under wins; `/admin/projects`
+   * (portfolio) still stays dark on `/admin/client-projects`, because that is a
+   * different path rather than a child of it.
+   */
+  const matches = (href: string) =>
+    href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`);
+
+  const current = groups
+    .flatMap((g) => g.items)
+    .filter((item) => matches(item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
+  const isActive = (href: string) => href === current;
 
   return (
     <>

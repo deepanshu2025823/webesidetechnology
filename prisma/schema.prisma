@@ -102,6 +102,8 @@ model User {
   employeeRecord      Employee?      @relation("EmployeeAccount")
   attendanceApprovals Attendance[]
   leaveDecisions      LeaveRequest[]
+  issuedLetters       HrLetter[]     @relation("LetterIssuer")
+  ownedCandidates     Candidate[]    @relation("CandidateOwner")
 
   // Chatbot
   chatSessions ChatSession[] @relation("ChatAgent")
@@ -192,6 +194,15 @@ model SiteSettings {
   videoSubtitle String  @default("") @db.VarChar(400)
   /// How many videos sit side by side on a desktop row (1-6).
   videoPerRow   Int     @default(3)
+  /// Card shape: REEL for 9:16 shorts and reels, WIDE for 16:9 landscape.
+  videoAspect   String  @default("REEL") @db.VarChar(10)
+
+  /// Chat assistant copy. Kept here so the greeting and the "I didn't follow
+  /// that" line are editable without a deploy; the answers themselves live in
+  /// ChatAnswer.
+  chatGreeting String @default("") @db.VarChar(600)
+  chatFallback String @default("") @db.VarChar(600)
+  chatHandoffPrompt String @default("") @db.VarChar(600)
 
   metaTitle       String @default("") @db.VarChar(240)
   metaDescription String @db.Text
@@ -323,7 +334,8 @@ model Tag {
   name String @db.VarChar(120)
   slug String @unique @db.VarChar(190)
 
-  posts PostTag[]
+  posts    PostTag[]
+  projects ProjectTag[]
 }
 
 model Post {
@@ -396,9 +408,22 @@ model Project {
 
   services     ProjectService[]
   testimonials Testimonial[]
+  tags         ProjectTag[]
 
   @@index([status, order])
   @@index([isFeatured])
+}
+
+/// Case-study tags. Shares the blog's tag vocabulary so "Ecommerce" means the
+/// same thing on both, and drives the filter chips on /portfolio.
+model ProjectTag {
+  projectId String
+  tagId     String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, tagId])
+  @@index([tagId])
 }
 
 model ProjectService {
@@ -1137,19 +1162,50 @@ model CreditNote {
   @@index([invoiceId])
 }
 
+enum MoneyDirection {
+  INCOME
+  EXPENSE
+}
+
+/// How often a standing entry — rent, a salary run, a retainer — comes back.
+enum MoneyRecurrence {
+  NONE
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  HALF_YEARLY
+  YEARLY
+}
+
+/// One line in the money register: an expense, or income that did not arrive
+/// through an invoice. `direction` is what separates the two, so income and
+/// costs are recorded, categorised and reported in one place.
 model Expense {
   id           String        @id @default(cuid())
+  direction    MoneyDirection @default(EXPENSE)
   title        String        @db.VarChar(240)
   category     String        @default("General") @db.VarChar(120)
   amount       Int
+  /// Who it was paid to, or received from.
   vendor       String        @default("") @db.VarChar(190)
+  paymentMode  String        @default("") @db.VarChar(60)
+  reference    String        @default("") @db.VarChar(190)
   clientId     String?
   client       Client?       @relation(fields: [clientId], references: [id])
   projectId    String?
   project      ClientProject? @relation(fields: [projectId], references: [id])
   serviceId    String?
   service      Service?      @relation(fields: [serviceId], references: [id])
+  /// The date the money moved — or is expected to, while unsettled.
   spentAt      DateTime      @default(now())
+  /// Set when the entry is still owed or expected.
+  dueDate      DateTime?
+  isSettled    Boolean       @default(true)
+  /// Reminders fire only for unsettled entries that carry a due date.
+  remind         Boolean   @default(false)
+  remindDaysBefore Int     @default(3)
+  lastRemindedAt DateTime?
+  recurrence   MoneyRecurrence @default(NONE)
   notes        String?       @db.Text
   recordedById String?
   recordedBy   User?         @relation(fields: [recordedById], references: [id])
@@ -1160,6 +1216,8 @@ model Expense {
   @@index([serviceId])
   @@index([recordedById])
   @@index([spentAt])
+  @@index([direction, spentAt])
+  @@index([isSettled, dueDate])
 }
 
 /// A recurring commitment that expires: domain, hosting, AMC, retainer, wallet.
@@ -1723,6 +1781,7 @@ model Employee {
   salaries    SalaryStructure[]
   payslips    Payslip[]
   incentives  Incentive[]
+  letters     HrLetter[]
 
   @@index([department])
   @@index([reportingToId])
@@ -1820,6 +1879,183 @@ model Incentive {
   createdAt  DateTime      @default(now())
 
   @@index([employeeId, status])
+}
+
+// ---------------------------------------------------------------- letters
+
+enum LetterType {
+  OFFER
+  INTERNSHIP
+  EXPERIENCE
+  RELIEVING
+  CONFIRMATION
+  APPRECIATION
+}
+
+enum LetterStatus {
+  DRAFT
+  ISSUED
+  REVOKED
+}
+
+/// An internship, experience or offer letter issued to a team member, an
+/// intern or a placement candidate.
+///
+/// The person is stored by name as well as by relation: a letter is a record of
+/// what was issued on a date, and must still read correctly years later even if
+/// the employee row is edited or the candidate is deleted.
+model HrLetter {
+  id           String       @id @default(cuid())
+  type         LetterType   @default(EXPERIENCE)
+  /// Printed on the letter, and unique so two letters never share a reference.
+  refNo        String       @unique @db.VarChar(60)
+  employeeId   String?
+  employee     Employee?    @relation(fields: [employeeId], references: [id])
+  candidateId  String?
+  candidate    Candidate?   @relation(fields: [candidateId], references: [id])
+  personName   String       @db.VarChar(160)
+  personEmail  String       @default("") @db.VarChar(190)
+  personAddress String      @default("") @db.VarChar(400)
+  designation  String       @default("") @db.VarChar(160)
+  department   String       @default("") @db.VarChar(120)
+  startDate    DateTime?
+  endDate      DateTime?
+  /// Monthly stipend for an internship, or annual CTC for employment.
+  amount       Int?
+  /// Replaces the generated wording entirely when the team needs its own.
+  bodyOverride String?      @db.LongText
+  /// Extra paragraph appended to the generated wording.
+  remarks      String?      @db.Text
+  place        String       @default("") @db.VarChar(120)
+  signatoryName String      @default("") @db.VarChar(160)
+  signatoryRole String      @default("") @db.VarChar(160)
+  status       LetterStatus @default(DRAFT)
+  issuedAt     DateTime     @default(now())
+  issuedById   String?
+  issuedBy     User?        @relation("LetterIssuer", fields: [issuedById], references: [id])
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([employeeId])
+  @@index([candidateId])
+  @@index([type, issuedAt])
+  @@index([issuedById])
+}
+
+// ================================================================
+// PLACEMENTS - hiring partners and the candidates put in front of them
+// ================================================================
+
+enum CandidateSource {
+  ACADEMY  // studied with us
+  EXTERNAL // walked in from outside
+}
+
+enum CandidateStatus {
+  NEW
+  SHORTLISTED
+  IN_PROCESS
+  PLACED
+  ON_HOLD
+  REJECTED
+}
+
+enum PlacementStage {
+  SENT
+  SHORTLISTED
+  INTERVIEW
+  OFFERED
+  PLACED
+  REJECTED
+  WITHDRAWN
+}
+
+/// A company we place candidates with.
+model PlacementPartner {
+  id           String   @id @default(cuid())
+  name         String   @db.VarChar(190)
+  industry     String   @default("") @db.VarChar(120)
+  city         String   @default("") @db.VarChar(120)
+  website      String   @default("") @db.VarChar(300)
+  contactName  String   @default("") @db.VarChar(160)
+  contactEmail String   @default("") @db.VarChar(190)
+  contactPhone String   @default("") @db.VarChar(60)
+  /// string[] - roles they are currently hiring for
+  hiringFor    Json?
+  /// Our fee, as a percentage of the candidate's annual CTC.
+  commissionPct Int     @default(0)
+  agreementUrl String   @default("") @db.VarChar(500)
+  isActive     Boolean  @default(true)
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  applications PlacementApplication[]
+
+  @@index([isActive, name])
+}
+
+/// Someone we are placing. Academy students and outside applicants share this
+/// table — `source` is the only thing that separates them, and both need the
+/// same CV, pipeline and letters.
+model Candidate {
+  id            String          @id @default(cuid())
+  name          String          @db.VarChar(160)
+  email         String          @default("") @db.VarChar(190)
+  phone         String          @default("") @db.VarChar(60)
+  city          String          @default("") @db.VarChar(120)
+  source        CandidateSource @default(EXTERNAL)
+  /// Academy course and batch, for a student of ours.
+  course        String          @default("") @db.VarChar(160)
+  batch         String          @default("") @db.VarChar(120)
+  qualification String          @default("") @db.VarChar(190)
+  /// string[]
+  skills        Json?
+  experienceYears Int           @default(0)
+  currentCtc    Int             @default(0)
+  expectedCtc   Int             @default(0)
+  noticeDays    Int             @default(0)
+  /// Served from /api/media/[id] after upload, like every other file.
+  resumeUrl     String          @default("") @db.VarChar(500)
+  resumeName    String          @default("") @db.VarChar(255)
+  portfolioUrl  String          @default("") @db.VarChar(400)
+  linkedinUrl   String          @default("") @db.VarChar(400)
+  status        CandidateStatus @default(NEW)
+  rating        Int             @default(3)
+  ownerId       String?
+  owner         User?           @relation("CandidateOwner", fields: [ownerId], references: [id])
+  notes         String?         @db.Text
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  applications PlacementApplication[]
+  letters      HrLetter[]
+
+  @@index([status, createdAt])
+  @@index([source])
+  @@index([ownerId])
+}
+
+/// One candidate put forward to one partner for one role.
+model PlacementApplication {
+  id          String           @id @default(cuid())
+  candidateId String
+  candidate   Candidate        @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  partnerId   String
+  partner     PlacementPartner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  role        String           @db.VarChar(190)
+  stage       PlacementStage   @default(SENT)
+  sentAt      DateTime         @default(now())
+  interviewAt DateTime?
+  offerCtc    Int?
+  joinedAt    DateTime?
+  feedback    String?          @db.Text
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([candidateId, partnerId, role])
+  @@index([partnerId, stage])
+  @@index([stage, interviewAt])
 }
 
 // ================================================================
@@ -2317,6 +2553,37 @@ model ChatSession {
 
   @@index([status, lastMessageAt])
   @@index([agentId])
+}
+
+/// An answer the team has taught the assistant, editable in the admin panel.
+///
+/// The built-in intents (services, pricing, portfolio, contact) still answer
+/// from live site data; these rows are checked first, so the team can add its
+/// own questions or override a built-in reply without a deploy.
+model ChatAnswer {
+  id       String  @id @default(cuid())
+  /// What this answers, shown in the admin list. Also matched against.
+  question String  @db.VarChar(240)
+  /// string[] - words or phrases that route a visitor message here.
+  keywords Json?
+  reply    String  @db.Text
+  /// Offered as a chip after the reply, one per line.
+  followUps Json?
+  /// Overrides a built-in intent instead of adding a new one, e.g. "pricing".
+  intent   String  @default("") @db.VarChar(40)
+  /// Hands the conversation to a person straight after this reply.
+  handsOff Boolean @default(false)
+  /// Shown as an opening chip before the visitor types anything.
+  isQuickReply Boolean @default(false)
+  isActive Boolean @default(true)
+  order    Int     @default(0)
+  /// How often the matcher has used this answer — tells the team what visitors
+  /// actually ask about.
+  hits     Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, order])
 }
 
 model ChatMessage {

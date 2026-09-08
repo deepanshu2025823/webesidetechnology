@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { overdueInvoiceSweep, renewalReminderSweep, taskAlertSweep } from "@/lib/automation";
+import { moneyReminderSweep, overdueInvoiceSweep, renewalReminderSweep, taskAlertSweep } from "@/lib/automation";
 
 /**
  * Nightly automation. Point a scheduler at this once a day:
  *
  *   curl -H "Authorization: Bearer $CRON_SECRET" https://site/api/cron/daily
  *
- * Runs renewal reminders and escalation, overdue invoices, and task
- * due/overdue alerts — scope sections 8, 17 and 18.
+ * Runs renewal reminders and escalation, overdue invoices, income and expense
+ * reminders, and task due/overdue alerts — scope sections 8, 17 and 18.
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -17,9 +17,10 @@ export async function GET(request: Request) {
   }
 
   const started = Date.now();
-  const [renewals, invoices, tasks] = await Promise.all([
+  const [renewals, invoices, money, tasks] = await Promise.all([
     renewalReminderSweep(),
     overdueInvoiceSweep(),
+    moneyReminderSweep(),
     taskAlertSweep(),
   ]);
 
@@ -28,6 +29,7 @@ export async function GET(request: Request) {
     tookMs: Date.now() - started,
     renewals,
     invoices,
+    money,
     tasks,
   });
 }

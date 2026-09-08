@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { GREETING_SUGGESTIONS, detectIntent, replyTo, type Suggestion } from "@/lib/chatbot";
+import { answer, greeting, greetingSuggestions, type Suggestion } from "@/lib/chatbot";
 import { alertChatHandoff } from "@/lib/alerts";
-import { getSettings } from "@/lib/queries";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 /**
@@ -90,12 +89,11 @@ export async function POST(request: Request) {
       });
       if (existing && !existing.closedAt) {
         return NextResponse.json(
-          serialise(existing, existing.messages, existing.status === "BOT" ? GREETING_SUGGESTIONS : []),
+          serialise(existing, existing.messages, existing.status === "BOT" ? await greetingSuggestions() : []),
         );
       }
     }
 
-    const settings = await getSettings();
     const token = randomBytes(24).toString("base64url");
 
     const session = await prisma.chatSession.create({
@@ -103,17 +101,14 @@ export async function POST(request: Request) {
         token,
         pageUrl: input.pageUrl,
         ipAddress: ip,
-        messages: {
-          create: {
-            role: "BOT",
-            body: `Hello! I'm Sahab, the assistant at ${settings.siteName}. Ask me about our services, pricing or recent work — or I can put you through to the team.`,
-          },
-        },
+        // Greeting and opening chips both come from admin when the team has
+        // written their own.
+        messages: { create: { role: "BOT", body: await greeting() } },
       },
       include: { messages: true },
     });
 
-    return NextResponse.json(serialise(session, session.messages, GREETING_SUGGESTIONS));
+    return NextResponse.json(serialise(session, session.messages, await greetingSuggestions()));
   }
 
   // The remaining actions all operate on an existing, open conversation.
@@ -182,8 +177,7 @@ export async function POST(request: Request) {
   // Once a person is involved the bot stays quiet — two voices in one thread
   // is worse than a short wait.
   if (session.status === "BOT") {
-    const intent = detectIntent(input.body);
-    const reply = await replyTo(intent);
+    const reply = await answer(input.body);
     suggestions = reply.suggestions;
     handoff = Boolean(reply.handoff);
 

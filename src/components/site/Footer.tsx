@@ -38,7 +38,13 @@ export function Footer({
     .join(", ");
 
   return (
-    <footer className="bg-navy-950 text-navy-200">
+    /*
+      The trailing padding is what keeps the legal row above the fixed mobile
+      bar. It lives on the footer itself so the navy carries all the way down
+      behind the bar and into the phone's safe area — a spacer outside the
+      footer would show as a white strip.
+    */
+    <footer className="mobile-bar-clear bg-navy-950 text-navy-200">
       <Container size="wide">
         <div className="grid gap-12 py-16 lg:grid-cols-12 lg:gap-8 lg:py-20">
           <div className="lg:col-span-4">
