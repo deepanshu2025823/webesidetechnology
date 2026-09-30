@@ -79,7 +79,20 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      # The image is in the registry either way. Until the VPS deploy account
+      # and its pull token exist, say so and stop, rather than failing the run
+      # on a login error that looks like a broken build.
+      - id: check
+        run: |
+          if [ -z "${{ secrets.GHCR_TOKEN }}" ] || [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::VPS release skipped - GHCR_TOKEN or VPS_SSH_KEY is not set. The image was pushed and can be pulled by hand."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Pull the new image and restart
+        if: steps.check.outputs.ready == 'true'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
