@@ -10,9 +10,24 @@ export function formatDate(value: Date | string | null | undefined, opts?: Intl.
   );
 }
 
+/**
+ * The site's own origin, as an absolute URL.
+ *
+ * `NEXT_PUBLIC_SITE_URL` is typed by hand into an env file or a CI variable,
+ * and it arrives without a scheme often enough to be worth handling: a bare
+ * "www.example.com" throws in `new URL()` and fails the whole build, and
+ * anywhere it does not throw it silently produces schemeless canonicals and
+ * Open Graph tags that crawlers reject. A missing scheme is assumed to be
+ * https, which is the only thing it can sensibly mean in production.
+ */
+export function siteUrl() {
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim().replace(/\/+$/, "");
+  if (!raw) return "http://localhost:3000";
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
 export function absoluteUrl(path = "") {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${siteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export function slugify(input: string) {

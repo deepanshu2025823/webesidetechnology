@@ -1,0 +1,24 @@
+# Keeps the build context small, and keeps secrets out of the image entirely.
+.git
+.github
+node_modules
+.next
+out
+.vercel
+
+# Never bake credentials into a layer. The container reads its environment from
+# the compose file on the server at run time.
+.env
+.env.*
+!.env.example
+
+# Generated at build time inside the image.
+src/generated
+tsconfig.tsbuildinfo
+
+.DS_Store
+*.log
+README.md
+DEPLOYMENT.md
+AGENTS.md
+CLAUDE.md

@@ -1,0 +1,26 @@
+# Lives at /opt/sahabindia/docker-compose.yml on the VPS.
+#
+# This and an .env file are the only things the server holds. There is no source
+# checkout beside them — the image is pulled, already built, from the private
+# registry.
+
+services:
+  web:
+    image: ghcr.io/deepanshu2025823/webesidetechnology:latest
+    container_name: sahabindia-web
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # 3001, not 3000: this box already runs the JLS Worldwide Next.js app on
+      # 127.0.0.1:3000 under jls.service, and binding over it would take that
+      # site down.
+      #
+      # Loopback on purpose. nginx is the only thing that reaches the app;
+      # published on 0.0.0.0 the container would answer on the public IP
+      # directly, bypassing TLS and the server name checks above it.
+      - "127.0.0.1:3001:3000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

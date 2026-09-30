@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Emits .next/standalone: the server plus only the node_modules it actually
+  // traced. That is what the Docker image ships, so the VPS never receives the
+  // repo, the TypeScript sources or a toolchain able to rebuild them.
+  output: "standalone",
   images: {
     // Editors can paste an image URL in the admin panel, so allow any HTTPS
     // host to be optimised. Uploaded files are served from /uploads locally.

@@ -4,6 +4,7 @@ import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { getSettings } from "@/lib/queries";
 import { buildMetadata } from "@/lib/seo";
+import { siteUrl } from "@/lib/utils";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -30,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     ...base,
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+    metadataBase: new URL(siteUrl()),
     applicationName: settings.siteName,
     manifest: "/manifest.webmanifest",
     icons: {
