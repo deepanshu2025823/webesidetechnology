@@ -49,6 +49,12 @@ export const DEFAULT_SETTINGS = {
   ctaSubtitle: "",
   ctaButton: "Book a free consultation",
   ctaUrl: "/contact",
+  whyEyebrow: "Why us",
+  whyTitle: "",
+  whyBody: "",
+  whyImage: "",
+  whyCtaLabel: "More about us",
+  whyCtaUrl: "/about",
   videoEnabled: true,
   videoTitle: "Work in motion",
   videoSubtitle: "",
@@ -208,6 +214,23 @@ export const getStats = cache(async () =>
 
 export const getProcessSteps = cache(async () =>
   prisma.processStep.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
+);
+
+export const getHighlights = cache(async () =>
+  prisma.highlight.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
+);
+
+/**
+ * The home page's section order, visibility and spacing.
+ *
+ * Returned as plain rows; `resolveSections` merges them onto the list the code
+ * ships, so a section the editor has never touched still appears.
+ */
+export const getHomeSections = cache(async () =>
+  prisma.homeSection.findMany({
+    select: { key: true, isActive: true, order: true, spacing: true },
+    orderBy: { order: "asc" },
+  }),
 );
 
 export const getFaqs = cache(async (group?: string) =>

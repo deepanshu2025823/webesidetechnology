@@ -91,6 +91,7 @@ export async function saveService(_prev: ActionState, form: FormData): Promise<A
     deliverables: json(form, "deliverables"),
     priceFrom: num(form, "priceFrom"),
     priceUnit: str(form, "priceUnit") || "project",
+    tags: json(form, "tags"),
     isFeatured: bool(form, "isFeatured"),
     status: status(form, "PUBLISHED"),
     order: num(form, "order") ?? 0,
@@ -108,6 +109,38 @@ export async function saveService(_prev: ActionState, form: FormData): Promise<A
   await logActivity(session.id, id ? "update" : "create", "Service", id || undefined, title);
   refresh("/services", `/services/${data.slug}`, "/admin/services");
   redirect("/admin/services?saved=1");
+}
+
+/**
+ * The three fields worth changing without opening the full editor: what a
+ * service starts at, what that price is per, and where it sits in the list.
+ *
+ * Deliberately narrow — the landing page copy and SEO stay behind the form,
+ * where there is room to see what you are editing.
+ */
+export async function updateServiceRow(id: string, form: FormData): Promise<ActionState> {
+  const session = await requireSession();
+
+  const unit = str(form, "priceUnit");
+  const order = num(form, "order");
+
+  try {
+    await prisma.service.update({
+      where: { id },
+      data: {
+        priceFrom: num(form, "priceFrom"),
+        priceUnit: unit || "project",
+        order: order ?? 0,
+      },
+    });
+  } catch (error) {
+    console.error("[admin] updateServiceRow", error);
+    return { error: "Could not save that row." };
+  }
+
+  await logActivity(session.id, "update", "Service", id);
+  refresh("/services", "/admin/services");
+  return { ok: true, message: "Saved." };
 }
 
 export async function deleteService(id: string) {
@@ -308,6 +341,7 @@ export async function saveSettings(_prev: ActionState, form: FormData): Promise<
     "bankBranch", "upiId", "upiQr", "paymentNote", "facebook", "instagram",
     "linkedin", "twitter", "youtube", "footerAbout", "ctaTitle", "ctaSubtitle", "ctaButton",
     "ctaUrl", "videoTitle", "videoSubtitle",
+    "whyEyebrow", "whyTitle", "whyBody", "whyImage", "whyCtaLabel", "whyCtaUrl",
     "chatGreeting", "chatFallback", "chatHandoffPrompt",
     "metaTitle", "metaDescription", "metaKeywords", "gaMeasurementId",
     "gtmContainerId", "searchConsoleId", "schemaOrgType", "foundingYear",

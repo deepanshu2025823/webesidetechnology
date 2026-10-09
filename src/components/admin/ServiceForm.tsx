@@ -27,6 +27,7 @@ type ServiceValue = {
   deliverables: unknown;
   priceFrom: number | null;
   priceUnit: string;
+  tags: unknown;
   isFeatured: boolean;
   status: string;
   order: number;
@@ -195,6 +196,10 @@ export function ServiceForm({
                 </select>
               </FieldWrap>
             </div>
+          </Card>
+
+          <Card title="Tags" description="Shown in the admin list and available for filtering.">
+            <TagListInput name="tags" defaultValue={strings(service?.tags)} placeholder="e.g. Retainer" />
           </Card>
 
           <Card title="Deliverables" description="Bullet list in the sidebar.">

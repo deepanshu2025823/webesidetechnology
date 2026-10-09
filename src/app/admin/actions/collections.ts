@@ -141,6 +141,51 @@ export async function deleteCollectionItem(slug: string, id: string): Promise<Ac
   return { ok: true, message: `${collection.singular} deleted.` };
 }
 
+/**
+ * Copies a row, so a near-identical entry is a tweak rather than a re-type.
+ *
+ * The copy is deliberately not published: `isActive` and `status` are forced
+ * off where the model has them, because a duplicate carrying the original's
+ * wording should not appear on the live site before anyone has edited it.
+ */
+export async function duplicateCollectionItem(slug: string, id: string): Promise<ActionState> {
+  const session = await requireSession();
+  const collection = getCollection(slug);
+  if (!collection) return { error: "Unknown section" };
+
+  try {
+    const source = (await model(collection).findUnique({ where: { id } })) as Record<string, unknown> | null;
+    if (!source) return { error: "That item no longer exists." };
+
+    const data: Record<string, unknown> = {};
+    for (const field of collection.fields) {
+      data[field.name] = source[field.name];
+    }
+
+    const title = String(source[collection.titleField] ?? "").trim();
+    if (collection.titleField in data) data[collection.titleField] = title ? `${title} (copy)` : "Untitled copy";
+
+    // A unique slug, and a unique anything-else the model keys on.
+    if ("slug" in data) data.slug = `${slugify(String(source.slug ?? title) || "copy")}-copy-${Date.now().toString(36)}`;
+    if ("key" in data) data.key = `${String(source.key ?? "copy")}-copy-${Date.now().toString(36)}`;
+
+    if ("isActive" in data) data.isActive = false;
+    if ("status" in data) data.status = "DRAFT";
+    // Sits next to the original rather than at the top of the list.
+    if (typeof data.order === "number") data.order = (data.order as number) + 1;
+
+    const created = (await model(collection).create({ data })) as { id: string };
+
+    await logActivity(session.id, "create", collection.singular, created.id, String(data[collection.titleField] ?? ""));
+    refreshSite();
+
+    return { ok: true, message: `${collection.singular} copied. The copy is hidden until you publish it.` };
+  } catch (error) {
+    console.error(`[admin] duplicate ${collection.model} failed`, error);
+    return { error: "Could not copy this item." };
+  }
+}
+
 export async function reorderCollection(slug: string, ids: string[]): Promise<ActionState> {
   await requireSession();
   const collection = getCollection(slug);

@@ -49,6 +49,14 @@ export type Collection = {
   /** Field rendered as the row's primary label. */
   titleField: string;
   sortable?: boolean;
+  /**
+   * Off for fixed sets, where the rows correspond to something in the code and
+   * inventing or removing one would have no effect — the home page's sections,
+   * for instance. Reordering and editing stay available.
+   */
+  canCreate?: boolean;
+  canDelete?: boolean;
+  canDuplicate?: boolean;
 };
 
 const ORDER_FIELD: Field = {
@@ -157,7 +165,69 @@ export const COLLECTIONS: Record<string, Collection> = {
       { name: "title", label: "Step title", type: "text", required: true, inList: true },
       { name: "description", label: "Description", type: "textarea", colSpan: 2 },
       { name: "icon", label: "Icon", type: "icon", defaultValue: "Compass" },
+      {
+        name: "image",
+        label: "Picture",
+        type: "image",
+        colSpan: 2,
+        inList: true,
+        help: "Optional. Give any one step a picture and the whole row switches from icons to pictures — a step left without one falls back to its icon.",
+      },
       ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "highlights": {
+    model: "highlight",
+    slug: "highlights",
+    title: "Why-us promises",
+    singular: "Promise",
+    description:
+      "The points beside the brand panel in the 'Why us' band on the home page. The heading, body and picture for that band live in Settings.",
+    titleField: "title",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "title", label: "Title", type: "text", required: true, inList: true, placeholder: "Launch fast" },
+      { name: "description", label: "Description", type: "textarea", colSpan: 2, required: true },
+      { name: "icon", label: "Icon", type: "icon", defaultValue: "Rocket" },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
+  "home-sections": {
+    model: "homeSection",
+    slug: "home-sections",
+    title: "Home page sections",
+    singular: "Section",
+    description:
+      "Drag to reorder the home page, switch a band off, or change how much space it gets. The cream and white backgrounds re-alternate themselves, so no two shaded bands can end up touching.",
+    titleField: "label",
+    orderBy: { order: "asc" },
+    sortable: true,
+    // The rows map to renderers in the page: a new key would draw nothing, and
+    // a deleted one comes back with its defaults on the next deploy.
+    canCreate: false,
+    canDelete: false,
+    canDuplicate: false,
+    fields: [
+      { name: "label", label: "Section", type: "text", required: true, inList: true },
+      {
+        name: "spacing",
+        label: "Space around it",
+        type: "select",
+        defaultValue: "NORMAL",
+        inList: true,
+        options: [
+          { value: "NONE", label: "None — flush against the next section" },
+          { value: "COMPACT", label: "Compact" },
+          { value: "NORMAL", label: "Normal" },
+          { value: "ROOMY", label: "Roomy" },
+        ],
+      },
+      { name: "isActive", label: "Shown on the home page", type: "boolean", defaultValue: true, inList: true },
       ORDER_FIELD,
     ],
   },

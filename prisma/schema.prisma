@@ -186,6 +186,15 @@ model SiteSettings {
   ctaButton   String @default("Book a free consultation") @db.VarChar(120)
   ctaUrl      String @default("/contact") @db.VarChar(300)
 
+  /// The "why us" band on the home page: the brand panel image and its copy.
+  whyEyebrow String @default("Why us") @db.VarChar(120)
+  whyTitle   String @default("") @db.VarChar(240)
+  whyBody    String @default("") @db.VarChar(800)
+  /// Shown inside the navy panel. Falls back to the brand lockup when blank.
+  whyImage   String @default("") @db.VarChar(500)
+  whyCtaLabel String @default("More about us") @db.VarChar(120)
+  whyCtaUrl   String @default("/about") @db.VarChar(300)
+
   /// Home-page video carousel.
   videoEnabled  Boolean @default(true)
   videoTitle    String  @default("Work in motion") @db.VarChar(200)
@@ -271,6 +280,8 @@ model Service {
   deliverables     Json?
   priceFrom        Int?
   priceUnit        String        @default("project") @db.VarChar(40)
+  /// string[] - how the service is labelled in listings and filters.
+  tags             Json?
   isFeatured       Boolean       @default(false)
   status           ContentStatus @default(PUBLISHED)
   order            Int           @default(0)
@@ -494,8 +505,50 @@ model ProcessStep {
   title       String  @db.VarChar(160)
   description String @db.Text
   icon        String  @default("Compass") @db.VarChar(60)
+  /// Upload one and the step shows a picture instead of its icon. Left blank,
+  /// the icon is used — so the choice is per step, not all-or-nothing.
+  image       String  @default("") @db.VarChar(500)
   isActive    Boolean @default(true)
   order       Int     @default(0)
+}
+
+/// The "why us" promises beside the brand panel on the home page. Was a
+/// hard-coded array; the wording is marketing copy and changes more often than
+/// the code around it.
+model Highlight {
+  id          String  @id @default(cuid())
+  title       String  @db.VarChar(160)
+  description String @db.Text
+  icon        String  @default("Rocket") @db.VarChar(60)
+  isActive    Boolean @default(true)
+  order       Int     @default(0)
+
+  @@index([isActive, order])
+}
+
+/// How much air sits around a section. Named rather than a pixel value so the
+/// page keeps a consistent rhythm whatever an editor picks.
+enum SectionSpacing {
+  NONE
+  COMPACT
+  NORMAL
+  ROOMY
+}
+
+/// One band on the home page: whether it shows, where it sits, how much space
+/// it gets. `key` maps to a renderer in the page, so an editor can reorder and
+/// hide sections without a deploy, but cannot invent a section the code has no
+/// way to draw.
+model HomeSection {
+  id       String         @id @default(cuid())
+  key      String         @unique @db.VarChar(60)
+  /// Shown in the admin list. Editable, because "Showreel" may be renamed.
+  label    String         @db.VarChar(120)
+  isActive Boolean        @default(true)
+  order    Int            @default(0)
+  spacing  SectionSpacing @default(NORMAL)
+
+  @@index([isActive, order])
 }
 
 model Faq {

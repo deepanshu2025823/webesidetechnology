@@ -2,8 +2,13 @@
 
 import { useActionState, useEffect, useState } from "react";
 import Image from "next/image";
-import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
-import { deleteCollectionItem, saveCollectionItem, type ActionState } from "@/app/admin/actions/collections";
+import { Check, Copy, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import {
+  deleteCollectionItem,
+  duplicateCollectionItem,
+  saveCollectionItem,
+  type ActionState,
+} from "@/app/admin/actions/collections";
 import { Alert, Badge, EmptyState, FieldWrap, PageHeader, SubmitButton, Toggle, inputClass } from "@/components/admin/ui";
 import { ImageInput } from "@/components/admin/ImageInput";
 import { FileInput } from "@/components/admin/FileInput";
@@ -56,7 +61,7 @@ export function CollectionManager({
         title={collection.title}
         description={collection.description}
         actions={
-          readOnly ? null : (
+          readOnly || collection.canCreate === false ? null : (
             <button
               type="button"
               onClick={() => {
@@ -99,7 +104,7 @@ export function CollectionManager({
           title={`No ${collection.title.toLowerCase()} yet`}
           description={collection.description}
           action={
-            readOnly ? null : (
+            readOnly || collection.canCreate === false ? null : (
               <button
                 type="button"
                 onClick={() => setCreating(true)}
@@ -162,12 +167,21 @@ export function CollectionManager({
                         >
                           <Pencil className="size-4" />
                         </button>
-                        <DeleteButton
-                          slug={collection.slug}
-                          id={row.id}
-                          label={String(row[collection.titleField] ?? "")}
-                          onDone={(msg) => setNotice(msg)}
-                        />
+                        {collection.canDuplicate === false ? null : (
+                          <DuplicateButton
+                            slug={collection.slug}
+                            id={row.id}
+                            onDone={(msg) => setNotice(msg)}
+                          />
+                        )}
+                        {collection.canDelete === false ? null : (
+                          <DeleteButton
+                            slug={collection.slug}
+                            id={row.id}
+                            label={String(row[collection.titleField] ?? "")}
+                            onDone={(msg) => setNotice(msg)}
+                          />
+                        )}
                       </div>
                     </td>
                     )}
@@ -349,6 +363,36 @@ function CollectionForm({
         <SubmitButton>{row ? "Update" : "Create"}</SubmitButton>
       </div>
     </form>
+  );
+}
+
+function DuplicateButton({
+  slug,
+  id,
+  onDone,
+}: {
+  slug: string;
+  id: string;
+  onDone: (message: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        const result = await duplicateCollectionItem(slug, id);
+        setBusy(false);
+        onDone(result.error ?? result.message ?? "Copied.");
+      }}
+      className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-navy-50 hover:text-navy-900 disabled:opacity-50"
+      aria-label="Make a copy"
+      title="Make a copy"
+    >
+      <Copy className="size-4" />
+    </button>
   );
 }
 

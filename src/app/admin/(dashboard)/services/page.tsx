@@ -6,6 +6,7 @@ import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
 import { DeleteRowButton } from "@/components/admin/DeleteRowButton";
 import { DataTools } from "@/components/admin/DataTools";
 import { Icon } from "@/components/ui/Icon";
+import { ServiceRowEdit } from "@/components/admin/ServiceRowEdit";
 
 export default async function ServicesAdminPage({
   searchParams,
@@ -73,6 +74,8 @@ export default async function ServicesAdminPage({
                 <tr>
                   <th className="px-5 py-3 font-medium">Service</th>
                   <th className="px-5 py-3 font-medium">Group</th>
+                  <th className="px-5 py-3 font-medium">Tags</th>
+                  <th className="px-5 py-3 font-medium">Price &amp; order</th>
                   <th className="px-5 py-3 font-medium">Status</th>
                   <th className="px-5 py-3 font-medium">Home</th>
                   <th className="px-5 py-3 text-right font-medium">Actions</th>
@@ -95,6 +98,27 @@ export default async function ServicesAdminPage({
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-slate-600">{service.category?.name ?? "—"}</td>
+                    <td className="px-5 py-3.5">
+                      {Array.isArray(service.tags) && service.tags.length ? (
+                        <span className="flex flex-wrap gap-1">
+                          {(service.tags as string[]).slice(0, 3).map((tag) => (
+                            <span key={tag} className="rounded-full bg-navy-50 px-2 py-0.5 text-[11px] text-navy-700">
+                              {tag}
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <ServiceRowEdit
+                        id={service.id}
+                        priceFrom={service.priceFrom}
+                        priceUnit={service.priceUnit}
+                        order={service.order}
+                      />
+                    </td>
                     <td className="px-5 py-3.5">
                       <Badge tone={service.status === "PUBLISHED" ? "success" : "muted"}>
                         {service.status.toLowerCase()}

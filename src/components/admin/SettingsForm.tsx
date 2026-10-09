@@ -236,6 +236,36 @@ export function SettingsForm({ settings }: { settings: Settings }) {
       </div>
 
       <div className={tab === "cta" ? "space-y-6" : "hidden"}>
+        <Card
+          title="Why-us band"
+          description="The home page band with the brand panel. The promises beside it are edited under Home page → Why-us promises."
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FieldWrap label="Eyebrow" htmlFor="whyEyebrow">
+              <input id="whyEyebrow" name="whyEyebrow" defaultValue={value("whyEyebrow")} className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="Button text" htmlFor="whyCtaLabel" help="Leave blank to hide the button.">
+              <input id="whyCtaLabel" name="whyCtaLabel" defaultValue={value("whyCtaLabel")} className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="Heading" htmlFor="whyTitle" className="sm:col-span-2">
+              <input id="whyTitle" name="whyTitle" defaultValue={value("whyTitle")} className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="Body" htmlFor="whyBody" className="sm:col-span-2">
+              <textarea id="whyBody" name="whyBody" rows={3} defaultValue={value("whyBody")} className={inputClass} />
+            </FieldWrap>
+            <FieldWrap label="Button link" htmlFor="whyCtaUrl">
+              <input id="whyCtaUrl" name="whyCtaUrl" defaultValue={value("whyCtaUrl")} placeholder="/about" className={inputClass} />
+            </FieldWrap>
+            <FieldWrap
+              label="Panel picture"
+              className="sm:col-span-2"
+              help="Fills the navy panel. Left blank, the brand lockup is shown instead."
+            >
+              <ImageInput name="whyImage" defaultValue={value("whyImage")} folder="home" />
+            </FieldWrap>
+          </div>
+        </Card>
+
         <Card title="Call-to-action band" description="Appears at the bottom of most pages.">
           <div className="grid gap-5 sm:grid-cols-2">
             <FieldWrap label="Heading" htmlFor="ctaTitle" className="sm:col-span-2">

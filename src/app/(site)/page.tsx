@@ -1,8 +1,10 @@
+import { Fragment, type ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, BadgeCheck, Headset, Rocket, ShieldCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { Icon } from "@/components/ui/Icon";
 import { buttonClass } from "@/components/ui/Button";
 import { Hero, type Slide } from "@/components/sections/Hero";
 import { LogoMarquee } from "@/components/sections/LogoMarquee";
@@ -20,6 +22,8 @@ import {
   getClientLogos,
   getFaqs,
   getHeroSlides,
+  getHighlights,
+  getHomeSections,
   getPosts,
   getProcessSteps,
   getProjects,
@@ -29,34 +33,54 @@ import {
   getTestimonials,
   getVideoSlides,
 } from "@/lib/queries";
+import { SPACING_CLASS, resolveSections, type HomeSectionKey } from "@/lib/home-sections";
 import { buildMetadata } from "@/lib/seo";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata() {
   return buildMetadata({ path: "/" });
 }
 
-const PROMISES = [
-  { icon: Rocket, title: "Launch fast", body: "Sprint-based delivery with weekly demos, so momentum never stalls." },
-  { icon: ShieldCheck, title: "Own everything", body: "Source code, domains, hosting and ad accounts stay in your name." },
-  { icon: BadgeCheck, title: "Measurable work", body: "Every retainer reports on rankings, leads, spend and pipeline." },
-  { icon: Headset, title: "One point of contact", body: "A dedicated account manager across every service you buy." },
-];
+/**
+ * A band on the page.
+ *
+ * `self` marks the sections that draw their own full-width container — the hero,
+ * the logo strip, the showreel, the closing band. Everything else hands over
+ * just its contents and is wrapped here, which is what lets one place decide
+ * order, spacing and the alternating background.
+ */
+type Band = { node: ReactNode; self?: boolean; tone?: "navy" };
 
 export default async function HomePage() {
-  const [settings, slides, logos, services, stats, steps, projects, testimonials, posts, faqs, videos] =
-    await Promise.all([
-      getSettings(),
-      getHeroSlides(),
-      getClientLogos(),
-      getServices({ featuredOnly: true, take: 6 }),
-      getStats(),
-      getProcessSteps(),
-      getProjects({ featuredOnly: true, take: 3 }),
-      getTestimonials({ take: 6 }),
-      getPosts({ take: 3 }),
-      getFaqs("General"),
-      getVideoSlides(),
-    ]);
+  const [
+    settings,
+    slides,
+    logos,
+    services,
+    stats,
+    steps,
+    projects,
+    testimonials,
+    posts,
+    faqs,
+    videos,
+    highlights,
+    sectionRows,
+  ] = await Promise.all([
+    getSettings(),
+    getHeroSlides(),
+    getClientLogos(),
+    getServices({ featuredOnly: true, take: 6 }),
+    getStats(),
+    getProcessSteps(),
+    getProjects({ featuredOnly: true, take: 3 }),
+    getTestimonials({ take: 6 }),
+    getPosts({ take: 3 }),
+    getFaqs("General"),
+    getVideoSlides(),
+    getHighlights(),
+    getHomeSections(),
+  ]);
 
   const heroSlides: Slide[] = slides.length
     ? slides.map((s) => ({
@@ -84,86 +108,94 @@ export default async function HomePage() {
         },
       ];
 
-  return (
-    <>
-      {faqs.length ? (
-        <JsonLd
-          data={{
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: faqs.map((faq) => ({
-              "@type": "Question",
-              name: faq.question,
-              acceptedAnswer: { "@type": "Answer", text: faq.answer },
-            })),
-          }}
+  const bands: Partial<Record<HomeSectionKey, Band>> = {
+    hero: {
+      self: true,
+      node: (
+        <Hero
+          slides={heroSlides}
+          stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
         />
-      ) : null}
+      ),
+    },
 
-      <Hero
-        slides={heroSlides}
-        stats={stats.map((s) => ({ label: s.label, value: s.value, suffix: s.suffix }))}
-      />
+    logos: { self: true, node: <LogoMarquee logos={logos} title="Trusted by growing brands" /> },
 
-      <LogoMarquee logos={logos} title="Trusted by growing brands" />
+    brand: { self: true, node: <BrandPhilosophy /> },
 
-      {/* Brand philosophy --------------------------------------------- */}
-      <BrandPhilosophy />
-
-      {/* Video carousel ------------------------------------------------ */}
-      {settings.videoEnabled && videos.length ? (
-        <VideoCarousel
-          items={videos.map((v) => ({
-            id: v.id,
-            title: v.title,
-            description: v.description,
-            url: v.url,
-            thumbnail: v.thumbnail,
-          }))}
-          title={settings.videoTitle}
-          subtitle={settings.videoSubtitle}
-          perRow={settings.videoPerRow}
-          aspect={settings.videoAspect}
-        />
-      ) : null}
-
-      {/* Services ------------------------------------------------------ */}
-      {services.length ? (
-        <section className="py-20 sm:py-24">
-          <Container size="wide">
-            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-              <SectionHeading
-                eyebrow="What we do"
-                title="Technology and marketing under one roof"
-                description="From the website that carries your brand to the campaigns that fill your pipeline — built, run and reported by one accountable team."
+    videos:
+      settings.videoEnabled && videos.length
+        ? {
+            self: true,
+            node: (
+              <VideoCarousel
+                items={videos.map((v) => ({
+                  id: v.id,
+                  title: v.title,
+                  description: v.description,
+                  url: v.url,
+                  thumbnail: v.thumbnail,
+                }))}
+                title={settings.videoTitle}
+                subtitle={settings.videoSubtitle}
+                perRow={settings.videoPerRow}
+                aspect={settings.videoAspect}
               />
-              <Link href="/services" className={buttonClass("outline", "md", "shrink-0")}>
-                All services
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </div>
+            ),
+          }
+        : undefined,
 
-            <div className="mt-12">
-              <ServiceGrid services={services} />
-            </div>
-          </Container>
-        </section>
-      ) : null}
+    services: services.length
+      ? {
+          node: (
+            <Container size="wide">
+              <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                <SectionHeading
+                  eyebrow="What we do"
+                  title="Technology and marketing under one roof"
+                  description="From the website that carries your brand to the campaigns that fill your pipeline — built, run and reported by one accountable team."
+                />
+                <Link href="/services" className={buttonClass("outline", "md", "shrink-0")}>
+                  All services
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              </div>
 
-      {/* Why us -------------------------------------------------------- */}
-      <section className="bg-cream py-20 sm:py-24">
+              <div className="mt-12">
+                <ServiceGrid services={services} />
+              </div>
+            </Container>
+          ),
+        }
+      : undefined,
+
+    why: {
+      node: (
         <Container size="wide">
           <div className="grid items-center gap-14 lg:grid-cols-2">
             <div className="relative">
               <div className="overflow-hidden rounded-3xl border border-navy-900/10 bg-navy-950 p-10 shadow-brand">
-                <Image
-                  src="/brand/logo-light.png"
-                  alt={settings.siteName}
-                  width={1024}
-                  height={390}
-                  className="mx-auto h-auto w-full max-w-xs"
-                />
+                {/* An uploaded picture fills the panel; the brand lockup is the
+                    fallback and keeps its own breathing room inside it. */}
+                {settings.whyImage ? (
+                  <Image
+                    src={settings.whyImage}
+                    alt={settings.whyTitle || settings.siteName}
+                    width={1024}
+                    height={768}
+                    className="-m-10 h-auto w-[calc(100%+5rem)] max-w-none"
+                  />
+                ) : (
+                  <Image
+                    src={settings.logoDark}
+                    alt={settings.siteName}
+                    width={1024}
+                    height={390}
+                    className="mx-auto h-auto w-full max-w-xs"
+                  />
+                )}
               </div>
+
               {stats.length > 3 ? (
                 <div className="mt-6 grid grid-cols-3 gap-4">
                   {stats.slice(3, 6).map((stat) => (
@@ -181,145 +213,209 @@ export default async function HomePage() {
 
             <div>
               <SectionHeading
-                eyebrow="Why Sahab India"
-                title="An agency that behaves like your in-house team"
-                description="No handoffs between vendors, no finger-pointing when a campaign underperforms. Strategy, build and growth sit in one place, with one plan and one report."
+                eyebrow={settings.whyEyebrow}
+                title={settings.whyTitle}
+                description={settings.whyBody}
               />
 
-              <ul className="mt-10 grid gap-6 sm:grid-cols-2">
-                {PROMISES.map(({ icon: Icon, title, body }) => (
-                  <li key={title} className="flex gap-4">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-gold-500/15 text-gold-700">
-                      <Icon className="size-5" aria-hidden />
-                    </span>
-                    <div>
-                      <h3 className="text-base font-semibold text-navy-900">{title}</h3>
-                      <p className="mt-1 text-sm leading-relaxed text-slate-600">{body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              {highlights.length ? (
+                <ul className="mt-10 grid gap-6 sm:grid-cols-2">
+                  {highlights.map((item) => (
+                    <li key={item.id} className="flex gap-4">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-gold-500/15 text-gold-700">
+                        <Icon name={item.icon} className="size-5" />
+                      </span>
+                      <div>
+                        <h3 className="text-base font-semibold text-navy-900">{item.title}</h3>
+                        <p className="mt-1 text-sm leading-relaxed text-slate-600">{item.description}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
 
-              <Link href="/about" className={buttonClass("outline", "md", "mt-10")}>
-                More about us
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
+              {settings.whyCtaLabel ? (
+                <Link href={settings.whyCtaUrl || "/about"} className={buttonClass("outline", "md", "mt-10")}>
+                  {settings.whyCtaLabel}
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              ) : null}
             </div>
           </div>
         </Container>
-      </section>
+      ),
+    },
 
-      {/* Process ------------------------------------------------------- */}
-      {steps.length ? (
-        <section className="py-20 sm:py-24">
-          <Container size="wide">
-            <SectionHeading
-              eyebrow="How we work"
-              title="A delivery process you can actually follow"
-              description="Every engagement runs on the same rhythm — a written scope, a named owner, visible milestones and a report at the end of each cycle."
-              align="center"
-            />
-            <div className="mt-14">
-              <ProcessTimeline steps={steps} />
-            </div>
-          </Container>
-        </section>
-      ) : null}
-
-      {/* Portfolio ----------------------------------------------------- */}
-      {projects.length ? (
-        <section className="bg-cream py-20 sm:py-24">
-          <Container size="wide">
-            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+    process: steps.length
+      ? {
+          node: (
+            <Container size="wide">
               <SectionHeading
-                eyebrow="Selected work"
-                title="Results we can point at"
-                description="A sample of recent builds and campaigns, with the numbers that mattered to the client."
+                eyebrow="How we work"
+                title="A delivery process you can actually follow"
+                description="Every engagement runs on the same rhythm — a written scope, a named owner, visible milestones and a report at the end of each cycle."
+                align="center"
               />
-              <Link href="/portfolio" className={buttonClass("outline", "md", "shrink-0")}>
-                View portfolio
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </div>
+              <div className="mt-14">
+                <ProcessTimeline steps={steps} />
+              </div>
+            </Container>
+          ),
+        }
+      : undefined,
 
-            <ul className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {projects.map((project) => (
-                <li key={project.id}>
-                  <ProjectCard project={project} />
-                </li>
-              ))}
-            </ul>
-          </Container>
-        </section>
-      ) : null}
+    portfolio: projects.length
+      ? {
+          node: (
+            <Container size="wide">
+              <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                <SectionHeading
+                  eyebrow="Selected work"
+                  title="Results we can point at"
+                  description="A sample of recent builds and campaigns, with the numbers that mattered to the client."
+                />
+                <Link href="/portfolio" className={buttonClass("outline", "md", "shrink-0")}>
+                  View portfolio
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              </div>
 
-      {/* Testimonials -------------------------------------------------- */}
-      {testimonials.length ? (
-        <section className="relative isolate overflow-hidden bg-navy-950 py-20 sm:py-24">
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10"
-            style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(181,135,38,0.20), transparent 65%)" }}
-          />
-          <Container>
-            <SectionHeading eyebrow="Client voices" title="What our clients say" align="center" tone="dark" />
-            <div className="mt-14">
-              <Testimonials items={testimonials} />
-            </div>
-          </Container>
-        </section>
-      ) : null}
+              <ul className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {projects.map((project) => (
+                  <li key={project.id}>
+                    <ProjectCard project={project} />
+                  </li>
+                ))}
+              </ul>
+            </Container>
+          ),
+        }
+      : undefined,
 
-      {/* Blog ---------------------------------------------------------- */}
-      {posts.length ? (
-        <section className="py-20 sm:py-24">
-          <Container size="wide">
-            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-              <SectionHeading
-                eyebrow="Insights"
-                title="Notes from the workshop"
-                description="Practical writing on search, paid media, content and building software that sells."
-              />
-              <Link href="/blog" className={buttonClass("outline", "md", "shrink-0")}>
-                Read the blog
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            </div>
+    testimonials: testimonials.length
+      ? {
+          tone: "navy",
+          node: (
+            <Container>
+              <SectionHeading eyebrow="Client voices" title="What our clients say" align="center" tone="dark" />
+              <div className="mt-14">
+                <Testimonials items={testimonials} />
+              </div>
+            </Container>
+          ),
+        }
+      : undefined,
 
-            <ul className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {posts.map((post) => (
-                <li key={post.id}>
-                  <PostCard post={post} />
-                </li>
-              ))}
-            </ul>
-          </Container>
-        </section>
-      ) : null}
+    blog: posts.length
+      ? {
+          node: (
+            <Container size="wide">
+              <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                <SectionHeading
+                  eyebrow="Insights"
+                  title="Notes from the workshop"
+                  description="Practical writing on search, paid media, content and building software that sells."
+                />
+                <Link href="/blog" className={buttonClass("outline", "md", "shrink-0")}>
+                  Read the blog
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              </div>
 
-      {/* FAQ ----------------------------------------------------------- */}
+              <ul className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {posts.map((post) => (
+                  <li key={post.id}>
+                    <PostCard post={post} />
+                  </li>
+                ))}
+              </ul>
+            </Container>
+          ),
+        }
+      : undefined,
+
+    faq: faqs.length
+      ? {
+          node: (
+            <Container>
+              <SectionHeading eyebrow="Questions" title="Things clients ask before starting" align="center" />
+              <div className="mt-12">
+                <FaqAccordion items={faqs} />
+              </div>
+            </Container>
+          ),
+        }
+      : undefined,
+
+    cta: {
+      self: true,
+      node: (
+        <CtaBand
+          title={settings.ctaTitle}
+          subtitle={settings.ctaSubtitle}
+          buttonLabel={settings.ctaButton}
+          buttonUrl={settings.ctaUrl}
+          phone={settings.phone}
+        />
+      ),
+    },
+  };
+
+  /*
+   * The cream/white alternation is computed from the final order rather than
+   * written onto each section, so reordering in admin cannot leave two cream
+   * bands touching. The dark band sits outside the count — it reads as a break
+   * in the rhythm either way, and letting it consume a turn would flip every
+   * section after it.
+   */
+  let plainBands = 0;
+
+  return (
+    <>
       {faqs.length ? (
-        <section className="bg-cream py-20 sm:py-24">
-          <Container>
-            <SectionHeading
-              eyebrow="Questions"
-              title="Things clients ask before starting"
-              align="center"
-            />
-            <div className="mt-12">
-              <FaqAccordion items={faqs} />
-            </div>
-          </Container>
-        </section>
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqs.map((faq) => ({
+              "@type": "Question",
+              name: faq.question,
+              acceptedAnswer: { "@type": "Answer", text: faq.answer },
+            })),
+          }}
+        />
       ) : null}
 
-      <CtaBand
-        title={settings.ctaTitle}
-        subtitle={settings.ctaSubtitle}
-        buttonLabel={settings.ctaButton}
-        buttonUrl={settings.ctaUrl}
-        phone={settings.phone}
-      />
+      {resolveSections(sectionRows).map((section) => {
+        if (!section.isActive) return null;
+        const band = bands[section.key];
+        if (!band) return null;
+
+        if (band.self) return <Fragment key={section.key}>{band.node}</Fragment>;
+
+        const navy = band.tone === "navy";
+        const shaded = !navy && plainBands++ % 2 === 1;
+
+        return (
+          <section
+            key={section.key}
+            className={cn(
+              navy && "relative isolate overflow-hidden bg-navy-950",
+              shaded && "bg-cream",
+              SPACING_CLASS[section.spacing],
+            )}
+          >
+            {navy ? (
+              <div
+                aria-hidden
+                className="absolute inset-0 -z-10"
+                style={{ background: "radial-gradient(50% 60% at 50% 0%, rgba(181,135,38,0.20), transparent 65%)" }}
+              />
+            ) : null}
+            {band.node}
+          </section>
+        );
+      })}
     </>
   );
 }

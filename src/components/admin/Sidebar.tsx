@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BadgeCheck,
   BadgeIndianRupee,
   BarChart3,
   Bot,
@@ -40,6 +41,7 @@ import {
   Receipt,
   RefreshCw,
   Route,
+  Rows3,
   Search,
   ScrollText,
   Settings,
@@ -141,9 +143,11 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Home page",
     items: [
+      { href: "/admin/home-sections", label: "Section order", icon: Rows3, module: "website" },
       { href: "/admin/hero", label: "Hero slides", icon: FileText, module: "website" },
       { href: "/admin/stats", label: "Stats", icon: BarChart3, module: "website" },
       { href: "/admin/process", label: "Process steps", icon: Workflow, module: "website" },
+      { href: "/admin/highlights", label: "Why-us promises", icon: BadgeCheck, module: "website" },
       { href: "/admin/testimonials", label: "Testimonials", icon: MessageSquareQuote, module: "website" },
       { href: "/admin/client-logos", label: "Client logos", icon: Building2, module: "website" },
       { href: "/admin/faqs", label: "FAQs", icon: Star, module: "website" },

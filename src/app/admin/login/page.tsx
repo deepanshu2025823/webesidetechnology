@@ -38,7 +38,7 @@ export default async function LoginPage() {
             and squash the lockup flat.
           */}
           <Image
-            src="/brand/logo-light.png"
+            src={settings.logoDark}
             alt={settings.siteName}
             width={1024}
             height={390}
@@ -65,7 +65,7 @@ export default async function LoginPage() {
       <div className="flex items-center justify-center bg-white px-6 py-16">
         <div className="w-full max-w-sm">
           <Image
-            src="/brand/logo.png"
+            src={settings.logoLight}
             alt={settings.siteName}
             width={1024}
             height={390}
