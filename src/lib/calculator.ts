@@ -73,8 +73,16 @@ export function emptySelection(groups: CalcGroup[]): Selection {
   return { options, quantities };
 }
 
-/** Round to the nearest ₹500 — false precision reads as a real quote. */
-function tidy(amount: number) {
+/**
+ * Round to the nearest ₹500 — false precision reads as a real quote.
+ *
+ * Not when the variance is nil. A nil spread means the figures are not an
+ * estimate at all but published package prices, and those end in 999 on
+ * purpose: rounding turned ₹34,999 into ₹35,000 and the calculator stopped
+ * agreeing with the price list the client advertises.
+ */
+function tidy(amount: number, spread: number) {
+  if (!spread) return Math.round(amount);
   return Math.round(amount / 500) * 500;
 }
 
@@ -131,8 +139,8 @@ export function estimate(groups: CalcGroup[], selection: Selection, config: Calc
     subtotal,
     tax,
     total,
-    low: tidy(total * (1 - spread)),
-    high: tidy(total * (1 + spread)),
+    low: tidy(total * (1 - spread), spread),
+    high: tidy(total * (1 + spread), spread),
     missing,
   };
 }

@@ -20,6 +20,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     prisma.postCategory.findMany({ select: { slug: true } }),
   ]);
 
+  // These pages were stamped `new Date()`, so every time Google fetched the
+  // sitemap the home page, services, portfolio, about, blog and contact all
+  // claimed to have changed in that same second. A lastmod that is always "now"
+  // is never true, and a crawler that notices stops believing the file — which
+  // is the opposite of what a sitemap is for. Stamp them with the newest thing
+  // the CMS has actually published instead.
+  const lastContentChange =
+    [...services, ...projects, ...posts, ...pages]
+      .map((row) => row.updatedAt)
+      .sort((a, b) => b.getTime() - a.getTime())[0] ?? new Date();
+
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), changeFrequency: "weekly" as const, priority: 1 },
     { url: absoluteUrl("/services"), changeFrequency: "weekly" as const, priority: 0.9 },
@@ -27,7 +38,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl("/about"), changeFrequency: "monthly" as const, priority: 0.7 },
     { url: absoluteUrl("/blog"), changeFrequency: "daily" as const, priority: 0.8 },
     { url: absoluteUrl("/contact"), changeFrequency: "monthly" as const, priority: 0.7 },
-  ].map((r) => ({ ...r, lastModified: new Date() }));
+  ].map((r) => ({ ...r, lastModified: lastContentChange }));
 
   return [
     ...staticRoutes,

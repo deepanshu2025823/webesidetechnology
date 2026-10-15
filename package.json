@@ -13,7 +13,8 @@
     "db:seed:calculator": "tsx scripts/seed-calculator.ts",
     "db:studio": "prisma studio",
     "brand:assets": "node scripts/build-brand-assets.mjs",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:set:pricing": "tsx scripts/set-package-pricing.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.10.0",

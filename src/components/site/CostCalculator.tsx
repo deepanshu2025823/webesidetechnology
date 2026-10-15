@@ -164,10 +164,16 @@ export function CostCalculator({
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold-300">Your estimate</p>
             <p className="mt-3 font-display text-3xl leading-tight">
               {money(result.low)}
-              <span className="text-navy-200"> – </span>
-              {money(result.high)}
+              {result.high !== result.low && (
+                <>
+                  <span className="text-navy-200"> – </span>
+                  {money(result.high)}
+                </>
+              )}
             </p>
-            <p className="mt-1.5 text-xs text-navy-200">Including {config.taxPercent}% tax</p>
+            {config.taxPercent > 0 && (
+              <p className="mt-1.5 text-xs text-navy-200">Including {config.taxPercent}% tax</p>
+            )}
           </div>
 
           {result.lines.length ? (
