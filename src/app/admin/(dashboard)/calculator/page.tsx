@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { requirePermission } from "@/lib/auth";
+import { requireModule } from "@/lib/auth";
+import { canEdit } from "@/lib/permissions";
 import { PageHeader } from "@/components/admin/ui";
 import { CalculatorManager, type GroupRow } from "@/components/admin/CalculatorManager";
 
@@ -17,7 +18,14 @@ const DEFAULTS = {
 };
 
 export default async function CalculatorAdminPage() {
-  await requirePermission("website", "write");
+  /*
+   * Was requirePermission("website", "write"), which threw FORBIDDEN for anyone
+   * holding read access — a Director, for instance. The sidebar link is drawn
+   * from canView, so those roles were shown the link and met the error screen
+   * when they followed it. Every other website page opens read-only for them;
+   * this one now does too.
+   */
+  const session = await requireModule("website");
 
   const [config, groups] = await Promise.all([
     prisma.calculatorSettings.findUnique({ where: { id: 1 } }),
@@ -45,6 +53,7 @@ export default async function CalculatorAdminPage() {
       />
 
       <CalculatorManager
+        readOnly={!canEdit(session.role, "website")}
         config={config ? { ...config } : DEFAULTS}
         groups={JSON.parse(JSON.stringify(groups)) as GroupRow[]}
       />

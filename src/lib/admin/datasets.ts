@@ -390,6 +390,105 @@ const subscriberImporter: Importer = {
   },
 };
 
+const RENEWAL_TYPES = [
+  "DOMAIN", "HOSTING", "SSL", "AMC", "SEO_RETAINER", "SOCIAL_RETAINER",
+  "AD_MANAGEMENT", "API", "WHATSAPP", "SMS", "IVR", "OTHER",
+] as const;
+
+const RENEWAL_STATUSES = ["ACTIVE", "DUE", "RENEWED", "LOST", "CANCELLED"] as const;
+
+/**
+ * Renewals arrive as a spreadsheet from whoever held the domains and hosting
+ * before, which is exactly the case this exists for.
+ *
+ * A renewal has to belong to a client, so the client column is matched by name
+ * and a row naming someone not on the books is reported rather than quietly
+ * attached to the wrong account or dropped. Re-importing the same sheet updates
+ * the matching renewal instead of duplicating it — the identity being the
+ * client plus the renewal's name.
+ */
+const renewalImporter: Importer = {
+  fields: [
+    { column: "Name", example: "sahabindia.com domain", required: true },
+    { column: "Client", example: "Raas By Batra", required: true, note: "Must match a client already on the books." },
+    { column: "Type", example: "DOMAIN", note: RENEWAL_TYPES.join(", ") },
+    { column: "Provider", example: "GoDaddy" },
+    { column: "Identifier", example: "sahabindia.com", note: "Domain, account or licence reference." },
+    { column: "Expiry Date", example: "2027-03-31", required: true, note: "YYYY-MM-DD or DD/MM/YYYY." },
+    { column: "Start Date", example: "2026-03-31" },
+    { column: "Amount", example: "1200" },
+    { column: "Status", example: "ACTIVE", note: RENEWAL_STATUSES.join(", ") },
+    { column: "Notes", example: "Auto-renew is off at the registrar." },
+  ],
+  async run(rows) {
+    const outcome: ImportOutcome = { created: 0, updated: 0, skipped: 0, errors: [] };
+
+    // One read for the whole sheet; a lookup per row would be a query per line.
+    const clients = await prisma.client.findMany({ select: { id: true, name: true } });
+    const byName = new Map(clients.map((c) => [c.name.trim().toLowerCase(), c.id]));
+
+    for (const [i, row] of rows.entries()) {
+      const line = i + 2;
+      if (blank(row)) {
+        outcome.skipped += 1;
+        continue;
+      }
+
+      const name = pick(row, "Name", "Renewal", "Service");
+      if (!name) {
+        outcome.errors.push(`Row ${line}: name is required.`);
+        continue;
+      }
+
+      const clientName = pick(row, "Client", "Customer", "Account");
+      const clientId = byName.get(clientName.trim().toLowerCase());
+      if (!clientId) {
+        outcome.errors.push(
+          clientName
+            ? `Row ${line}: no client called "${clientName}".`
+            : `Row ${line}: client is required.`,
+        );
+        continue;
+      }
+
+      const expiryDate = parseDate(pick(row, "Expiry Date", "Expires", "Expiry", "Renewal Date"));
+      if (!expiryDate) {
+        outcome.errors.push(`Row ${line}: expiry date is required, as YYYY-MM-DD or DD/MM/YYYY.`);
+        continue;
+      }
+
+      const data = {
+        name,
+        clientId,
+        type: parseEnum(pick(row, "Type", "Kind"), RENEWAL_TYPES, "OTHER"),
+        provider: pick(row, "Provider", "Vendor", "Registrar"),
+        identifier: pick(row, "Identifier", "Domain", "Reference"),
+        startDate: parseDate(pick(row, "Start Date", "Started", "From")),
+        expiryDate,
+        amount: parseAmount(pick(row, "Amount", "Cost", "Price")),
+        status: parseEnum(pick(row, "Status"), RENEWAL_STATUSES, "ACTIVE"),
+        notes: pick(row, "Notes", "Note", "Remarks") || null,
+      };
+
+      try {
+        const existing = await prisma.renewal.findFirst({ where: { clientId, name } });
+        if (existing) {
+          await prisma.renewal.update({ where: { id: existing.id }, data });
+          outcome.updated += 1;
+        } else {
+          await prisma.renewal.create({ data });
+          outcome.created += 1;
+        }
+      } catch (error) {
+        console.error("[import] renewal", error);
+        outcome.errors.push(`Row ${line}: could not be saved.`);
+      }
+    }
+
+    return outcome;
+  },
+};
+
 const employeeImporter: Importer = {
   fields: [
     { column: "Name", example: "Anisha Verma", required: true },
@@ -855,6 +954,7 @@ export const DATASETS: Record<string, Dataset> = {
     label: "Renewals",
     description: "Domains, hosting, retainers and everything that expires.",
     module: "renewals",
+    importer: renewalImporter,
     searchHint: "Search name, provider, client…",
     statuses: chips(["ACTIVE", "DUE", "RENEWED", "LOST", "CANCELLED"]),
     query: (f) =>

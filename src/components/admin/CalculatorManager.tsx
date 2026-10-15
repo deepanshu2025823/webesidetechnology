@@ -59,13 +59,38 @@ const KINDS = [
  * editable here, so reshaping the calculator when the pricing sheet changes is
  * data entry rather than a deploy.
  */
-export function CalculatorManager({ config, groups }: { config: CalculatorConfig; groups: GroupRow[] }) {
+export function CalculatorManager({
+  config,
+  groups,
+  readOnly = false,
+}: {
+  config: CalculatorConfig;
+  groups: GroupRow[];
+  readOnly?: boolean;
+}) {
   const [open, setOpen] = useState<string | null>(groups[0]?.id ?? null);
   const [addingGroup, setAddingGroup] = useState(false);
 
+  /*
+   * A disabled fieldset turns off every control inside it, however deeply
+   * nested — which is what this screen needs, being a dozen small forms rather
+   * than one. Threading a readOnly prop through each of them would be a lot of
+   * surface area to get wrong, and missing one would leave a save button that
+   * fails at the server instead of a screen that is honestly read-only.
+   *
+   * The accordion still opens: `disabled` stops activation, so the expander
+   * sits outside the fieldset by virtue of being the thing we do want working.
+   */
   return (
     <div className="space-y-6">
-      <SettingsCard config={config} />
+      {readOnly ? (
+        <p className="rounded-xl border border-navy-900/10 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          You have view-only access to website content, so the calculator is shown but cannot be edited here.
+        </p>
+      ) : null}
+      <fieldset disabled={readOnly} className="disabled:opacity-70">
+        <SettingsCard config={config} />
+      </fieldset>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -74,13 +99,15 @@ export function CalculatorManager({ config, groups }: { config: CalculatorConfig
             Shown top to bottom in sort order. Each answer adds a fixed amount, or a percentage of the running total.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setAddingGroup((v) => !v)}
-          className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-800"
-        >
-          <Plus className="size-4" aria-hidden /> Add question
-        </button>
+        {readOnly ? null : (
+          <button
+            type="button"
+            onClick={() => setAddingGroup((v) => !v)}
+            className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-800"
+          >
+            <Plus className="size-4" aria-hidden /> Add question
+          </button>
+        )}
       </div>
 
       {addingGroup ? (
@@ -128,7 +155,10 @@ export function CalculatorManager({ config, groups }: { config: CalculatorConfig
             </button>
 
             {open === group.id ? (
-              <div className="space-y-6 border-t border-navy-900/10 bg-slate-50/60 p-5">
+              <fieldset
+                disabled={readOnly}
+                className="space-y-6 border-t border-navy-900/10 bg-slate-50/60 p-5 disabled:opacity-70"
+              >
                 <div className="rounded-xl border border-navy-900/10 bg-white p-5">
                   <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Question</p>
                   <GroupForm group={group} order={group.order} />
@@ -138,7 +168,7 @@ export function CalculatorManager({ config, groups }: { config: CalculatorConfig
                   <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Answers</p>
                   <OptionList group={group} />
                 </div>
-              </div>
+              </fieldset>
             ) : null}
           </div>
         ))}
