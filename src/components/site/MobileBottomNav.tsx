@@ -25,7 +25,9 @@ export function MobileBottomNav({
   const links = [
     { href: "/", label: "Home", icon: Home },
     { href: "/services", label: "Services", icon: Sparkles },
-    { href: "/portfolio", label: "Work", icon: Briefcase },
+    // "Portfolio", matching the header menu — the same destination called two
+    // different things reads as two different places.
+    { href: "/portfolio", label: "Portfolio", icon: Briefcase },
   ];
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
