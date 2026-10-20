@@ -41,7 +41,7 @@ export default async function LoginPage() {
             src={settings.logoDark}
             alt={settings.siteName}
             width={1024}
-            height={390}
+            height={512}
             priority
             className="h-24 w-auto self-start"
           />
@@ -68,7 +68,7 @@ export default async function LoginPage() {
             src={settings.logoLight}
             alt={settings.siteName}
             width={1024}
-            height={390}
+            height={512}
             priority
             className="mx-auto h-24 w-auto lg:hidden"
           />

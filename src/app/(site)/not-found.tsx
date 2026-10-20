@@ -12,7 +12,7 @@ export default function NotFound() {
             src="/brand/logo-mark-light.png"
             alt=""
             width={512}
-            height={666}
+            height={756}
             className="mx-auto h-32 w-auto opacity-70"
           />
           <p className="mt-10 font-display text-6xl text-gold-400">404</p>

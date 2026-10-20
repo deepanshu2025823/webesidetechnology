@@ -120,7 +120,7 @@ export function Hero({ slides, stats }: { slides: Slide[]; stats: { label: strin
                     src="/brand/logo-light.png"
                     alt=""
                     width={1024}
-                    height={390}
+                    height={512}
                     priority
                     className="h-auto w-full max-w-[320px] opacity-90"
                   />

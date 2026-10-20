@@ -22,10 +22,10 @@ export default async function PortalLoginPage() {
         <div aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-gold-700 via-gold-400 to-gold-700" />
         <div className="relative flex h-full flex-col justify-between p-12">
           <Image
-            src="/brand/logo-light.png"
+            src={settings.logoDark}
             alt={settings.siteName}
             width={1024}
-            height={390}
+            height={512}
             priority
             className="h-24 w-auto self-start"
           />
@@ -48,10 +48,10 @@ export default async function PortalLoginPage() {
       <div className="flex items-center justify-center bg-white px-6 py-16">
         <div className="w-full max-w-sm">
           <Image
-            src="/brand/logo.png"
+            src={settings.logoLight}
             alt={settings.siteName}
             width={1024}
-            height={390}
+            height={512}
             priority
             className="mx-auto h-24 w-auto lg:hidden"
           />

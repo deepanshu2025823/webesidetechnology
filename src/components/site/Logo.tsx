@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 /** Intrinsic size of the supplied wordmark lockup, used to keep the aspect ratio. */
 const LOCKUP_WIDTH = 1024;
-const LOCKUP_HEIGHT = 390;
+const LOCKUP_HEIGHT = 512;
 
 /**
  * The full logo lockup, sized by height.

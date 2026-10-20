@@ -63,7 +63,7 @@ export default async function DatasetReportPage({
             src="/brand/logo.png"
             alt={settings.siteName}
             width={1024}
-            height={390}
+            height={512}
             className="h-12 w-auto object-contain"
             priority
           />

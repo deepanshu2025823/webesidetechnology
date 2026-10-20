@@ -54,7 +54,7 @@ export default async function PrintLetterPage({ params }: { params: Promise<{ id
 
       <header className="flex items-start justify-between gap-8 border-b-2 border-gold-600 pb-6">
         <div>
-          <Image src={agency.logo} alt={agency.name} width={1024} height={390} className="h-20 w-auto" />
+          <Image src={agency.logo} alt={agency.name} width={1024} height={512} className="h-20 w-auto" />
           <p className="mt-3 font-display text-lg">{agency.name}</p>
           {agency.address ? <p className="text-xs text-slate-600">{agency.address}</p> : null}
           <p className="text-xs text-slate-600">{[agency.email, agency.phone].filter(Boolean).join(" · ")}</p>

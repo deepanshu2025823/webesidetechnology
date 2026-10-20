@@ -190,7 +190,7 @@ export default async function HomePage() {
                     src={settings.logoDark}
                     alt={settings.siteName}
                     width={1024}
-                    height={390}
+                    height={512}
                     className="mx-auto h-auto w-full max-w-xs"
                   />
                 )}
