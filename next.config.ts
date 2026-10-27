@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
     formats: ["image/avif", "image/webp"],
   },
+  experimental: {
+    serverActions: {
+      // A case study's write-up and SEO fields go up in one save. The 1 MB
+      // default turned a long one into a crash screen; nginx allows 12 MB.
+      bodySizeLimit: "10mb",
+    },
+  },
   poweredByHeader: false,
   compress: true,
   // `next dev` binds 0.0.0.0, so the panel is reachable over 127.0.0.1 and the

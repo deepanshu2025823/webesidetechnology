@@ -71,6 +71,7 @@ jobs:
           # or in the image history.
           secrets: |
             database_url=${{ secrets.DATABASE_URL }}
+            server_actions_key=${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

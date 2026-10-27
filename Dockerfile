@@ -39,8 +39,16 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 # the database. The URL arrives as a BuildKit secret rather than a build
 # argument: an ARG is recorded in the image history and would ship the database
 # password to anyone who pulls the image.
+#
+# The Server Actions key is fixed for the same reason a deploy should not log
+# anyone out: without it every build mints new action IDs, and an admin page
+# opened before a deploy fails on its next save with "Failed to find Server
+# Action". Optional — absent, Next falls back to a fresh key per build.
 RUN --mount=type=secret,id=database_url \
-    DATABASE_URL="$(cat /run/secrets/database_url)" npm run build
+    --mount=type=secret,id=server_actions_key,required=false \
+    DATABASE_URL="$(cat /run/secrets/database_url)" \
+    NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat /run/secrets/server_actions_key 2>/dev/null)" \
+    npm run build
 
 # The standalone server deliberately leaves these out, expecting a CDN. There is
 # no CDN in front of this one, so it serves them itself.
