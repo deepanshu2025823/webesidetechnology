@@ -16,6 +16,7 @@ export type HomeSectionKey =
   | "brand"
   | "videos"
   | "services"
+  | "industries"
   | "why"
   | "process"
   | "portfolio"
@@ -37,6 +38,7 @@ export const HOME_SECTIONS: SectionDefinition[] = [
   { key: "brand", label: "Brand philosophy", note: "The illustrated BRAND headline." },
   { key: "videos", label: "Showreel", note: "The video strip. Also has its own on/off switch in Settings." },
   { key: "services", label: "Services", note: "Featured services. Hidden automatically when none are featured." },
+  { key: "industries", label: "Industries we serve", note: "Industry cards. Hidden automatically when none are visible." },
   { key: "why", label: "Why us", note: "The brand panel, the promises beside it and its button." },
   { key: "process", label: "Process steps", note: "The 'how we work' timeline." },
   { key: "portfolio", label: "Case studies", note: "Featured case studies." },

@@ -526,6 +526,18 @@ model Highlight {
   @@index([isActive, order])
 }
 
+/// The "Industries we serve" band on the home page.
+model Industry {
+  id          String  @id @default(cuid())
+  name        String  @db.VarChar(120)
+  description String  @default("") @db.VarChar(300)
+  icon        String  @default("Building2") @db.VarChar(60)
+  isActive    Boolean @default(true)
+  order       Int     @default(0)
+
+  @@index([isActive, order])
+}
+
 /// How much air sits around a section. Named rather than a pixel value so the
 /// page keeps a consistent rhythm whatever an editor picks.
 enum SectionSpacing {

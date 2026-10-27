@@ -197,6 +197,31 @@ export const COLLECTIONS: Record<string, Collection> = {
     ],
   },
 
+  "industries": {
+    model: "industry",
+    slug: "industries",
+    title: "Industries we serve",
+    singular: "Industry",
+    description:
+      "The 'Top industries we serve' band on the home page. Its place and spacing on the page are set under Home page sections.",
+    titleField: "name",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "name", label: "Industry", type: "text", required: true, inList: true, placeholder: "Healthcare" },
+      {
+        name: "description",
+        label: "One line about it",
+        type: "textarea",
+        colSpan: 2,
+        help: "Optional. Keep it short — it sits under the name on a small card.",
+      },
+      { name: "icon", label: "Icon", type: "icon", defaultValue: "Building2" },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
   "home-sections": {
     model: "homeSection",
     slug: "home-sections",

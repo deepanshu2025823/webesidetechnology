@@ -24,6 +24,7 @@ import {
   getHeroSlides,
   getHighlights,
   getHomeSections,
+  getIndustries,
   getPosts,
   getProcessSteps,
   getProjects,
@@ -65,6 +66,7 @@ export default async function HomePage() {
     faqs,
     videos,
     highlights,
+    industries,
     sectionRows,
   ] = await Promise.all([
     getSettings(),
@@ -79,6 +81,7 @@ export default async function HomePage() {
     getFaqs("General"),
     getVideoSlides(),
     getHighlights(),
+    getIndustries(),
     getHomeSections(),
   ]);
 
@@ -164,6 +167,38 @@ export default async function HomePage() {
               <div className="mt-12">
                 <ServiceGrid services={services} />
               </div>
+            </Container>
+          ),
+        }
+      : undefined,
+
+    industries: industries.length
+      ? {
+          node: (
+            <Container size="wide">
+              <SectionHeading
+                eyebrow="Industries"
+                title="Top industries we serve"
+                description="Websites, portals and campaigns shaped around how each sector actually sells — and the software it already runs on."
+                align="center"
+              />
+
+              <ul className="mt-12 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
+                {industries.map((industry) => (
+                  <li
+                    key={industry.id}
+                    className="group flex h-full flex-col items-center rounded-2xl border border-navy-900/10 bg-white p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-400/60 hover:shadow-brand sm:p-7"
+                  >
+                    <span className="grid size-12 place-items-center rounded-xl bg-navy-900 text-gold-400 transition-colors group-hover:bg-gold-500 group-hover:text-navy-950 sm:size-14">
+                      <Icon name={industry.icon} className="size-6 sm:size-7" />
+                    </span>
+                    <h3 className="mt-4 text-sm font-semibold text-navy-900 sm:text-base">{industry.name}</h3>
+                    {industry.description ? (
+                      <p className="mt-2 hidden text-sm leading-relaxed text-slate-600 sm:block">{industry.description}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
             </Container>
           ),
         }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
+import Link from "next/link";
+import { Eye, EyeOff, Loader2, LogIn, Mail } from "lucide-react";
 import { loginAction, type LoginState } from "@/app/admin/actions/auth";
 import { cn } from "@/lib/utils";
 
@@ -27,9 +28,14 @@ export function LoginForm({ className }: { className?: string }) {
       </div>
 
       <div>
-        <label htmlFor="password" className="text-sm font-medium text-navy-900">
-          Password
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="text-sm font-medium text-navy-900">
+            Password
+          </label>
+          <Link href="/admin/forgot-password" className="text-sm font-medium text-gold-700 hover:text-gold-800">
+            Forgot password?
+          </Link>
+        </div>
         <div className="relative mt-1.5">
           <input
             id="password"
@@ -64,6 +70,20 @@ export function LoginForm({ className }: { className?: string }) {
         {pending ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
         {pending ? "Signing in…" : "Sign in"}
       </button>
+
+      <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-slate-400">
+        <span className="h-px flex-1 bg-navy-900/10" />
+        or
+        <span className="h-px flex-1 bg-navy-900/10" />
+      </div>
+
+      <Link
+        href="/admin/login/otp"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-navy-900/15 px-6 py-3 text-sm font-semibold text-navy-900 transition-colors hover:border-navy-900/30 hover:bg-navy-50"
+      >
+        <Mail className="size-4" aria-hidden />
+        Sign in with OTP on email
+      </Link>
     </form>
   );
 }

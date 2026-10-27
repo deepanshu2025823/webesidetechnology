@@ -48,10 +48,13 @@ function moduleFor(pathname: string): ModuleKey {
   return "website";
 }
 
+/** The signed-out screens: sign in, one-time code, forgot and reset password. */
+const PUBLIC_PATHS = new Set(["/admin/login", "/admin/login/otp", "/admin/forgot-password", "/admin/reset-password"]);
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/admin/login") return NextResponse.next();
+  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
 
   const token = request.cookies.get("sahab_admin")?.value;
   const loginUrl = new URL("/admin/login", request.url);
