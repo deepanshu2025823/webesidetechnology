@@ -403,6 +403,8 @@ model Project {
   results         Json?
   /// string[] - image URLs
   gallery         Json?
+  /// string[] - video links (YouTube, Vimeo, Instagram, Google Drive or a file)
+  videos          Json?
   /// string[] - stack / channels used
   technologies    Json?
   coverImage      String?       @db.VarChar(500)

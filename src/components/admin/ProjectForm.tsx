@@ -22,6 +22,7 @@ type ProjectValue = {
   solution: string;
   results: unknown;
   gallery: unknown;
+  videos?: unknown;
   technologies: unknown;
   coverImage: string | null;
   websiteUrl: string;
@@ -103,6 +104,26 @@ export function ProjectForm({
 
           <Card title="Gallery" description="Additional screenshots shown below the write-up.">
             <GalleryInput name="gallery" defaultValue={strings(project?.gallery)} />
+          </Card>
+
+          <Card
+            title="Videos & reels"
+            description="For video editing, reel shoots and ad films. Shown as players on the case study page."
+          >
+            <FieldWrap
+              label="Video links"
+              htmlFor="videos"
+              help="One link per line. YouTube (videos and Shorts), Instagram reels and posts, Vimeo, Google Drive (shared as “anyone with the link”) or a direct .mp4 link."
+            >
+              <textarea
+                id="videos"
+                name="videos"
+                rows={5}
+                defaultValue={strings(project?.videos).join("\n")}
+                placeholder={"https://www.instagram.com/reel/…\nhttps://youtube.com/shorts/…"}
+                className={inputClass}
+              />
+            </FieldWrap>
           </Card>
         </div>
 

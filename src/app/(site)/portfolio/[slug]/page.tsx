@@ -5,6 +5,7 @@ import { ExternalLink, Quote } from "lucide-react";
 import { Container } from "@/components/ui/Container";
 import { PageHero } from "@/components/site/PageHero";
 import { CtaBand } from "@/components/sections/CtaBand";
+import { ProjectVideos } from "@/components/sections/ProjectVideos";
 import { JsonLd } from "@/components/JsonLd";
 import { buttonClass } from "@/components/ui/Button";
 import { getProjectBySlug, getProjects, getSettings } from "@/lib/queries";
@@ -40,6 +41,7 @@ export default async function ProjectDetailPage({ params }: Params) {
 
   const results = asArray<{ label: string; value: string }>(project.results);
   const gallery = asArray<string>(project.gallery);
+  const videos = asArray<string>(project.videos);
   const tech = asArray<string>(project.technologies);
 
   return (
@@ -126,6 +128,8 @@ export default async function ProjectDetailPage({ params }: Params) {
                   ))}
                 </ul>
               ) : null}
+
+              <ProjectVideos urls={videos} title={project.title} />
 
               {project.testimonials.length ? (
                 <figure className="mt-12 rounded-2xl border border-gold-400/40 bg-gold-50 p-8">

@@ -7,13 +7,27 @@
  * which is also the escape hatch for self-hosted MP4s.
  */
 
+type Common = {
+  embedUrl: string;
+  /** The same player without autoplay, for embedding inline on a page. */
+  inlineUrl: string;
+  poster: string;
+  portraitPoster: string;
+  /** Portrait 9:16 — Shorts and Instagram reels. */
+  vertical: boolean;
+};
+
 export type ParsedVideo =
-  | { kind: "youtube"; id: string; embedUrl: string; poster: string; portraitPoster: string }
-  | { kind: "vimeo"; id: string; embedUrl: string; poster: string; portraitPoster: string }
-  | { kind: "file"; embedUrl: string; poster: string; portraitPoster: string };
+  | ({ kind: "youtube"; id: string } & Common)
+  | ({ kind: "vimeo"; id: string } & Common)
+  | ({ kind: "instagram"; id: string } & Common)
+  | ({ kind: "drive"; id: string } & Common)
+  | ({ kind: "file" } & Common);
 
 const YOUTUBE_HOSTS = new Set(["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "www.youtu.be"]);
 const VIMEO_HOSTS = new Set(["vimeo.com", "www.vimeo.com", "player.vimeo.com"]);
+const INSTAGRAM_HOSTS = new Set(["instagram.com", "www.instagram.com", "m.instagram.com"]);
+const DRIVE_HOSTS = new Set(["drive.google.com"]);
 
 export function parseVideo(rawUrl: string): ParsedVideo | null {
   const raw = rawUrl?.trim();
@@ -41,6 +55,8 @@ export function parseVideo(rawUrl: string): ParsedVideo | null {
     return {
       kind: "youtube",
       id: clean,
+      vertical: url.pathname.startsWith("/shorts/"),
+      inlineUrl: `https://www.youtube-nocookie.com/embed/${clean}?rel=0`,
       // `rel=0` keeps the end screen on our own channel rather than a competitor's.
       embedUrl: `https://www.youtube-nocookie.com/embed/${clean}?autoplay=1&rel=0`,
       poster: `https://i.ytimg.com/vi/${clean}/hqdefault.jpg`,
@@ -58,6 +74,8 @@ export function parseVideo(rawUrl: string): ParsedVideo | null {
     return {
       kind: "vimeo",
       id,
+      vertical: false,
+      inlineUrl: `https://player.vimeo.com/video/${id}`,
       embedUrl: `https://player.vimeo.com/video/${id}?autoplay=1`,
       // Vimeo's poster needs an API call, so a custom thumbnail is preferred.
       poster: "",
@@ -65,5 +83,22 @@ export function parseVideo(rawUrl: string): ParsedVideo | null {
     };
   }
 
-  return { kind: "file", embedUrl: raw, poster: "", portraitPoster: "" };
+  if (INSTAGRAM_HOSTS.has(host)) {
+    // /reel/ID · /reels/ID · /p/ID · /tv/ID, with or without a trailing slash
+    const match = url.pathname.match(/^\/(?:reels?|p|tv)\/([A-Za-z0-9_-]+)/);
+    if (!match) return null;
+    const embed = `https://www.instagram.com/p/${match[1]}/embed`;
+    return { kind: "instagram", id: match[1], embedUrl: embed, inlineUrl: embed, poster: "", portraitPoster: "", vertical: true };
+  }
+
+  if (DRIVE_HOSTS.has(host)) {
+    // /file/d/ID/view · /open?id=ID · uc?id=ID — the file must be shared as
+    // "anyone with the link", or the player shows Google's access screen.
+    const id = url.pathname.match(/\/file\/d\/([A-Za-z0-9_-]+)/)?.[1] ?? url.searchParams.get("id") ?? "";
+    if (!id) return null;
+    const embed = `https://drive.google.com/file/d/${id}/preview`;
+    return { kind: "drive", id, embedUrl: embed, inlineUrl: embed, poster: "", portraitPoster: "", vertical: false };
+  }
+
+  return { kind: "file", embedUrl: raw, inlineUrl: raw, poster: "", portraitPoster: "", vertical: false };
 }

@@ -4,6 +4,7 @@ import { nextCode } from "@/lib/admin/sequence";
 import { parseAmount, parseDate, parseEnum, pick } from "@/lib/admin/csv";
 import type { ModuleKey } from "@/lib/permissions";
 import { slugify } from "@/lib/utils";
+import { parseVideo } from "@/lib/video";
 import type { Prisma } from "@/generated/prisma/client";
 
 /**
@@ -378,6 +379,7 @@ const projectImporter: Importer = {
     { column: "Solution", example: "Reel creatives, tight audiences, weekly optimisation." },
     { column: "Results", example: "Avg CPL: Under ₹100; Clients closed: 20+", note: "Label: value pairs separated by semicolons." },
     { column: "Technologies", example: "Meta Ads, Instagram Reels", note: "Comma separated." },
+    { column: "Videos", example: "https://www.instagram.com/reel/…", note: "Video or reel links, separated by spaces or semicolons." },
     { column: "Cover Image", example: "https://…/cover.jpg", note: "A URL. Upload pictures from the edit screen." },
     { column: "Website", example: "https://example.com" },
     { column: "Delivered", example: "2026-05-01" },
@@ -426,6 +428,9 @@ const projectImporter: Importer = {
       const filled = Object.fromEntries(Object.entries(optional).filter(([, v]) => v));
       const results = pick(row, "Results", "Outcomes");
       const technologies = pick(row, "Technologies", "Stack", "Channels");
+      const videoLinks = pick(row, "Videos", "Video Links", "Reels")
+        .split(/[\s;]+/)
+        .filter((link) => parseVideo(link));
       const statusRaw = pick(row, "Status");
       const featured = pick(row, "Featured", "Is Featured");
 
@@ -434,6 +439,7 @@ const projectImporter: Importer = {
         ...filled,
         ...(results ? { results: parseResults(results) } : {}),
         ...(technologies ? { technologies: listOf(technologies) } : {}),
+        ...(videoLinks.length ? { videos: videoLinks } : {}),
         ...(completedAt ? { completedAt } : {}),
         ...(statusRaw ? { status: parseEnum(statusRaw, statuses, "DRAFT") } : {}),
         ...(featured ? { isFeatured: /^(yes|y|true|1)$/i.test(featured) } : {}),
@@ -1187,6 +1193,7 @@ export const DATASETS: Record<string, Dataset> = {
             .join("; "),
       },
       { label: "Technologies", value: (r) => (Array.isArray(r.technologies) ? (r.technologies as string[]) : []) },
+      { label: "Videos", value: (r) => (Array.isArray(r.videos) ? (r.videos as string[]).join("; ") : "") },
       { label: "Cover Image", value: (r) => r.coverImage },
       { label: "Website", value: (r) => r.websiteUrl },
       { label: "Delivered", value: (r) => r.completedAt },

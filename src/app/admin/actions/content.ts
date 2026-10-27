@@ -8,6 +8,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { ContentStatus, EnquiryStatus } from "@/generated/prisma/enums";
 import { hashPassword, logActivity, requirePermission, requireSession } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
+import { parseVideo } from "@/lib/video";
 import { excerptFrom, readingMinutes, slugify } from "@/lib/utils";
 import type { ActionState } from "@/app/admin/actions/collections";
 
@@ -161,6 +162,22 @@ export async function saveProject(_prev: ActionState, form: FormData): Promise<A
   const title = str(form, "title");
   if (!title) return { error: "Title is required." };
 
+  // Each line must be a link the case-study page can actually play; anything
+  // else is named back to the editor rather than saved and silently dropped.
+  const videoLines = str(form, "videos")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const badVideos = videoLines.filter((line) => {
+    const video = parseVideo(line);
+    return !video || (video.kind === "file" && !/\.(mp4|webm|mov|m4v)(\?|$)/i.test(line));
+  });
+  if (badVideos.length) {
+    return {
+      error: `These video links are not supported: ${badVideos.join(", ")}. Use YouTube, Instagram, Vimeo, Google Drive or a direct .mp4 link.`,
+    };
+  }
+
   const completed = str(form, "completedAt");
   const data = {
     title,
@@ -172,6 +189,7 @@ export async function saveProject(_prev: ActionState, form: FormData): Promise<A
     solution: str(form, "solution"),
     results: json(form, "results"),
     gallery: json(form, "gallery"),
+    videos: [...new Set(videoLines)],
     technologies: json(form, "technologies"),
     coverImage: str(form, "coverImage") || null,
     websiteUrl: str(form, "websiteUrl"),
