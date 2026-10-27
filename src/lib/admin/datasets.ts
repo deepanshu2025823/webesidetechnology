@@ -349,6 +349,128 @@ const serviceImporter: Importer = {
   },
 };
 
+/** "Leads: 3x; CPL: -40%" <-> [{ label, value }], the shape the case-study page draws. */
+function parseResults(raw: string) {
+  return raw
+    .split(/[;\n]/)
+    .map((part) => {
+      const at = part.indexOf(":");
+      return at === -1 ? null : { label: part.slice(0, at).trim(), value: part.slice(at + 1).trim() };
+    })
+    .filter((r): r is { label: string; value: string } => Boolean(r?.label && r.value));
+}
+
+function listOf(raw: string) {
+  return raw
+    .split(/[,;\n]/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+}
+
+const projectImporter: Importer = {
+  fields: [
+    { column: "Title", example: "Meta Reel Ads for a real-estate developer", required: true },
+    { column: "Slug", example: "meta-reel-ads-real-estate", note: "Matches an existing case study to update it. Made from the title when blank." },
+    { column: "Client", example: "Furni Interiors" },
+    { column: "Industry", example: "Real Estate & Construction" },
+    { column: "Summary", example: "A year of Reel ads that kept cost per lead under ₹100." },
+    { column: "Challenge", example: "Quality leads for a high-ticket business." },
+    { column: "Solution", example: "Reel creatives, tight audiences, weekly optimisation." },
+    { column: "Results", example: "Avg CPL: Under ₹100; Clients closed: 20+", note: "Label: value pairs separated by semicolons." },
+    { column: "Technologies", example: "Meta Ads, Instagram Reels", note: "Comma separated." },
+    { column: "Cover Image", example: "https://…/cover.jpg", note: "A URL. Upload pictures from the edit screen." },
+    { column: "Website", example: "https://example.com" },
+    { column: "Delivered", example: "2026-05-01" },
+    { column: "Status", example: "DRAFT", note: "DRAFT, PUBLISHED or ARCHIVED. Defaults to DRAFT." },
+    { column: "Featured", example: "No" },
+    { column: "Meta Title", example: "" },
+    { column: "Meta Description", example: "" },
+  ],
+  async run(rows) {
+    const outcome: ImportOutcome = { created: 0, updated: 0, skipped: 0, errors: [] };
+    const statuses = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
+
+    for (const [i, row] of rows.entries()) {
+      const line = i + 2;
+      if (blank(row)) {
+        outcome.skipped += 1;
+        continue;
+      }
+
+      const title = pick(row, "Title", "Project", "Case Study", "Name");
+      if (!title) {
+        outcome.errors.push(`Row ${line}: title is required.`);
+        continue;
+      }
+
+      const delivered = pick(row, "Delivered", "Completed", "Completed At", "Date");
+      const completedAt = delivered ? parseDate(delivered) : null;
+      if (delivered && !completedAt) {
+        outcome.errors.push(`Row ${line}: "${delivered}" is not a date (use YYYY-MM-DD).`);
+        continue;
+      }
+
+      // A blank cell leaves that field alone on an update, so re-importing a
+      // trimmed sheet cannot wipe a case study's long-form copy.
+      const optional = {
+        clientName: pick(row, "Client", "Client Name"),
+        industry: pick(row, "Industry"),
+        summary: pick(row, "Summary"),
+        challenge: pick(row, "Challenge"),
+        solution: pick(row, "Solution"),
+        websiteUrl: pick(row, "Website", "Website Url", "Url"),
+        coverImage: pick(row, "Cover Image", "Cover", "Image"),
+        metaTitle: pick(row, "Meta Title"),
+        metaDescription: pick(row, "Meta Description"),
+      };
+      const filled = Object.fromEntries(Object.entries(optional).filter(([, v]) => v));
+      const results = pick(row, "Results", "Outcomes");
+      const technologies = pick(row, "Technologies", "Stack", "Channels");
+      const statusRaw = pick(row, "Status");
+      const featured = pick(row, "Featured", "Is Featured");
+
+      const data = {
+        title,
+        ...filled,
+        ...(results ? { results: parseResults(results) } : {}),
+        ...(technologies ? { technologies: listOf(technologies) } : {}),
+        ...(completedAt ? { completedAt } : {}),
+        ...(statusRaw ? { status: parseEnum(statusRaw, statuses, "DRAFT") } : {}),
+        ...(featured ? { isFeatured: /^(yes|y|true|1)$/i.test(featured) } : {}),
+      };
+
+      try {
+        const slug = slugify(pick(row, "Slug") || title);
+        const existing = await prisma.project.findUnique({ where: { slug } });
+        if (existing) {
+          await prisma.project.update({ where: { id: existing.id }, data });
+          outcome.updated += 1;
+        } else {
+          // New rows land as drafts unless the sheet says otherwise, so an
+          // import never publishes half-written case studies by accident.
+          await prisma.project.create({
+            data: {
+              summary: "",
+              challenge: "",
+              solution: "",
+              metaDescription: "",
+              metaKeywords: "",
+              status: "DRAFT",
+              ...data,
+              slug,
+            },
+          });
+          outcome.created += 1;
+        }
+      } catch {
+        outcome.errors.push(`Row ${line}: could not be saved.`);
+      }
+    }
+
+    return outcome;
+  },
+};
+
 const subscriberImporter: Importer = {
   fields: [
     { column: "Email", example: "rohit@acme.in", required: true },
@@ -1029,6 +1151,54 @@ export const DATASETS: Record<string, Dataset> = {
       { label: "Featured", value: (r) => r.isFeatured },
     ],
     stats: (rows) => [{ label: "Published", value: String(rows.filter((r) => r.status === "PUBLISHED").length) }],
+  }),
+
+  projects: defineDataset({
+    key: "projects",
+    label: "Portfolio",
+    description: "Case studies shown on the portfolio page.",
+    module: "website",
+    searchHint: "Search title, client, industry…",
+    statuses: chips(["DRAFT", "PUBLISHED", "ARCHIVED"]),
+    importer: projectImporter,
+    query: (f) =>
+      prisma.project.findMany({
+        where: {
+          ...(f.status && f.status !== "ALL" ? { status: f.status as never } : {}),
+          ...(search(f.q, ["title", "clientName", "industry", "slug", "summary"]) ?? {}),
+        },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+        take: EXPORT_LIMIT,
+      }),
+    // Same headings the importer reads, so an export edits and re-imports as is.
+    columns: [
+      { label: "Title", value: (r) => r.title },
+      { label: "Slug", value: (r) => r.slug },
+      { label: "Client", value: (r) => r.clientName },
+      { label: "Industry", value: (r) => r.industry },
+      { label: "Summary", value: (r) => r.summary },
+      { label: "Challenge", value: (r) => r.challenge },
+      { label: "Solution", value: (r) => r.solution },
+      {
+        label: "Results",
+        value: (r) =>
+          (Array.isArray(r.results) ? (r.results as { label?: string; value?: string }[]) : [])
+            .map((x) => `${x.label ?? ""}: ${x.value ?? ""}`)
+            .join("; "),
+      },
+      { label: "Technologies", value: (r) => (Array.isArray(r.technologies) ? (r.technologies as string[]) : []) },
+      { label: "Cover Image", value: (r) => r.coverImage },
+      { label: "Website", value: (r) => r.websiteUrl },
+      { label: "Delivered", value: (r) => r.completedAt },
+      { label: "Status", value: (r) => r.status },
+      { label: "Featured", value: (r) => r.isFeatured },
+      { label: "Meta Title", value: (r) => r.metaTitle },
+      { label: "Meta Description", value: (r) => r.metaDescription },
+    ],
+    stats: (rows) => [
+      { label: "Published", value: String(rows.filter((r) => r.status === "PUBLISHED").length) },
+      { label: "Featured", value: String(rows.filter((r) => r.isFeatured).length) },
+    ],
   }),
 
   subscribers: defineDataset({

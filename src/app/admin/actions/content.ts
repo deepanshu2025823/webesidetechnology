@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 import type { ContentStatus, EnquiryStatus } from "@/generated/prisma/enums";
 import { hashPassword, logActivity, requirePermission, requireSession } from "@/lib/auth";
+import { canEdit } from "@/lib/permissions";
 import { excerptFrom, readingMinutes, slugify } from "@/lib/utils";
 import type { ActionState } from "@/app/admin/actions/collections";
 
@@ -463,4 +464,39 @@ export async function deleteUser(id: string) {
   await prisma.user.delete({ where: { id } });
   await logActivity(session.id, "delete", "User", id);
   revalidatePath("/admin/users");
+}
+
+// ------------------------------------------------------------ bulk: projects
+
+export type BulkProjectAction = "publish" | "draft" | "archive" | "feature" | "unfeature" | "delete";
+
+/** One action over the rows ticked in the portfolio list. */
+export async function bulkProjects(ids: string[], action: string): Promise<{ error?: string; message?: string }> {
+  const session = await requireSession();
+  if (!canEdit(session.role, "website")) return { error: "You do not have permission to change the portfolio." };
+
+  const targets = ids.filter((id) => typeof id === "string" && id).slice(0, 500);
+  if (!targets.length) return { error: "Select at least one case study." };
+  const where = { id: { in: targets } };
+
+  if (action === "delete") {
+    await prisma.projectService.deleteMany({ where: { projectId: { in: targets } } });
+    await prisma.projectTag.deleteMany({ where: { projectId: { in: targets } } });
+    await prisma.testimonial.updateMany({ where: { projectId: { in: targets } }, data: { projectId: null } });
+    await prisma.project.deleteMany({ where });
+  } else {
+    const data = {
+      publish: { status: "PUBLISHED" as const },
+      draft: { status: "DRAFT" as const },
+      archive: { status: "ARCHIVED" as const },
+      feature: { isFeatured: true },
+      unfeature: { isFeatured: false },
+    }[action as Exclude<BulkProjectAction, "delete">];
+    if (!data) return { error: "Unknown action." };
+    await prisma.project.updateMany({ where, data });
+  }
+
+  await logActivity(session.id, `bulk_${action}`, "Project", undefined, `${action} on ${targets.length} case studies`);
+  refresh("/portfolio", "/admin/projects");
+  return { message: `${targets.length} case ${targets.length === 1 ? "study" : "studies"} ${action === "delete" ? "deleted" : "updated"}.` };
 }
