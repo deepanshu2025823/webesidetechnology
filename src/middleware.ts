@@ -36,6 +36,8 @@ const ROUTE_MODULES: [prefix: string, module: ModuleKey][] = [
   ["/admin/print/invoice", "finance"],
   ["/admin/print/quotation", "quotations"],
   ["/admin/settings", "settings"],
+  // Everyone's own activity; the team view sits under /admin/hr.
+  ["/admin/my-time", "dashboard"],
   ["/admin/users", "users"],
 ];
 

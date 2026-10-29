@@ -79,6 +79,8 @@ model User {
   reportedTasks    Task[]           @relation("TaskReporter")
   taskComments     TaskComment[]
   ownedLeads       Enquiry[]        @relation("LeadOwner")
+  activityDays     ActivityDay[]    @relation("ActivityOwner")
+  reviewedActivity ActivityDay[]    @relation("ActivityReviewer")
   requestedChanges ChangeRequest[]  @relation("CrRequester")
   decidedChanges   ChangeRequest[]  @relation("CrDecider")
 
@@ -534,6 +536,8 @@ model Industry {
   name        String  @db.VarChar(120)
   description String  @default("") @db.VarChar(300)
   icon        String  @default("Building2") @db.VarChar(60)
+  /// Card picture. The icon still shows, as a badge on it.
+  image       String? @db.VarChar(500)
   isActive    Boolean @default(true)
   order       Int     @default(0)
 
@@ -936,6 +940,17 @@ model ClientProject {
   health             ProjectHealth @default(ON_TRACK)
   commercial         CommercialModel @default(ONE_TIME)
   budget             Int           @default(0)
+  // What the client pays, kept apart because they recur differently: a build
+  // fee once, then a subscription and maintenance on their own cycles. Whole
+  // rupees; GST applies per gstMode.
+  projectCost        Int           @default(0)
+  subscriptionCost   Int           @default(0)
+  subscriptionCycle  String        @default("MONTHLY") @db.VarChar(20)
+  maintenanceCost    Int           @default(0)
+  maintenanceCycle   String        @default("MONTHLY") @db.VarChar(20)
+  /// NONE - no GST · EXCLUSIVE - GST added on top · INCLUSIVE - amounts already include it
+  gstMode            String        @default("NONE") @db.VarChar(12)
+  gstRate            Float         @default(18)
   startDate          DateTime?
   endDate            DateTime?
   closedAt           DateTime?
@@ -1874,6 +1889,36 @@ model Attendance {
   @@unique([employeeId, date])
   @@index([date, status])
   @@index([approvedById])
+}
+
+/// Time a team member was actively using the admin panel, one row per person per
+/// day (IST). Counted from a heartbeat sent only while the tab is visible and
+/// there has been keyboard or mouse input in the last two minutes. It measures
+/// panel use, not attendance: scope section 14 forbids inferring attendance
+/// from device use alone, so this sits beside Attendance rather than writing to it.
+model ActivityDay {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation("ActivityOwner", fields: [userId], references: [id], onDelete: Cascade)
+  /// Midnight IST of the day, stored as UTC.
+  date           DateTime
+  activeMinutes  Int       @default(0)
+  firstSeenAt    DateTime?
+  lastSeenAt     DateTime?
+  /// Why the day fell short of the target, written by the person themselves.
+  justification  String?   @db.Text
+  justifiedAt    DateTime?
+  /// NONE · PENDING · ACCEPTED · REJECTED
+  reviewStatus   String    @default("NONE") @db.VarChar(12)
+  reviewNote     String?   @db.Text
+  reviewedById   String?
+  reviewedBy     User?     @relation("ActivityReviewer", fields: [reviewedById], references: [id])
+  reviewedAt     DateTime?
+
+  @@unique([userId, date])
+  @@index([date])
+  @@index([reviewStatus])
+  @@index([reviewedById])
 }
 
 model LeaveRequest {

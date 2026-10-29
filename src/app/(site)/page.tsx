@@ -187,15 +187,29 @@ export default async function HomePage() {
                 {industries.map((industry) => (
                   <li
                     key={industry.id}
-                    className="group flex h-full flex-col items-center rounded-2xl border border-navy-900/10 bg-white p-5 text-center transition-all duration-300 hover:-translate-y-1 hover:border-gold-400/60 hover:shadow-brand sm:p-7"
+                    className="group flex h-full flex-col overflow-hidden rounded-2xl border border-navy-900/10 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-gold-400/60 hover:shadow-brand"
                   >
-                    <span className="grid size-12 place-items-center rounded-xl bg-navy-900 text-gold-400 transition-colors group-hover:bg-gold-500 group-hover:text-navy-950 sm:size-14">
-                      <Icon name={industry.icon} className="size-6 sm:size-7" />
-                    </span>
-                    <h3 className="mt-4 text-sm font-semibold text-navy-900 sm:text-base">{industry.name}</h3>
-                    {industry.description ? (
-                      <p className="mt-2 hidden text-sm leading-relaxed text-slate-600 sm:block">{industry.description}</p>
-                    ) : null}
+                    <div className="relative aspect-[3/2] overflow-hidden bg-navy-950">
+                      {industry.image ? (
+                        <Image
+                          src={industry.image}
+                          alt={industry.name}
+                          fill
+                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : null}
+                      <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-navy-950/60 via-navy-950/0 to-transparent" />
+                      <span className="absolute bottom-3 left-3 grid size-10 place-items-center rounded-xl bg-navy-900/90 text-gold-400 ring-1 ring-white/20 backdrop-blur transition-colors group-hover:bg-gold-500 group-hover:text-navy-950 sm:size-11">
+                        <Icon name={industry.icon} className="size-5" />
+                      </span>
+                    </div>
+                    <div className="flex flex-1 flex-col p-4 sm:p-5">
+                      <h3 className="text-sm font-semibold text-navy-900 sm:text-base">{industry.name}</h3>
+                      {industry.description ? (
+                        <p className="mt-1.5 hidden text-sm leading-relaxed text-slate-600 sm:block">{industry.description}</p>
+                      ) : null}
+                    </div>
                   </li>
                 ))}
               </ul>

@@ -463,6 +463,17 @@ export async function convertQuotationToProject(id: string): Promise<void> {
 
 // ------------------------------------------------------------------ projects
 
+function cycle(form: FormData, key: string) {
+  const value = str(form, key);
+  return ["MONTHLY", "QUARTERLY", "HALF_YEARLY", "ANNUAL"].includes(value) ? value : "MONTHLY";
+}
+
+/** A disabled rate field posts nothing, so the last rate survives switching GST off. */
+function gstRate(form: FormData) {
+  const n = Number(form.get("gstRate"));
+  return Number.isFinite(n) && n >= 0 && n <= 100 && form.get("gstRate") !== null ? n : 18;
+}
+
 export async function saveProjectRecord(_prev: ActionState, form: FormData): Promise<ActionState> {
   const session = await requirePermission("projects", "write");
   const id = str(form, "id");
@@ -481,6 +492,13 @@ export async function saveProjectRecord(_prev: ActionState, form: FormData): Pro
     health: (str(form, "health") || "ON_TRACK") as never,
     commercial: (str(form, "commercial") || "ONE_TIME") as never,
     budget: int(form, "budget"),
+    projectCost: Math.max(0, int(form, "projectCost")),
+    subscriptionCost: Math.max(0, int(form, "subscriptionCost")),
+    subscriptionCycle: cycle(form, "subscriptionCycle"),
+    maintenanceCost: Math.max(0, int(form, "maintenanceCost")),
+    maintenanceCycle: cycle(form, "maintenanceCycle"),
+    gstMode: ["EXCLUSIVE", "INCLUSIVE"].includes(str(form, "gstMode")) ? str(form, "gstMode") : "NONE",
+    gstRate: gstRate(form),
     startDate: date(form, "startDate"),
     endDate: date(form, "endDate"),
     objectives: str(form, "objectives") || null,
@@ -545,21 +563,23 @@ export async function saveMilestone(projectId: string, form: FormData): Promise<
   const title = str(form, "title");
   if (!title) return;
 
-  const status = (str(form, "status") || "PENDING") as never;
+  const status = str(form, "status") || "PENDING";
+  const before = id ? await prisma.milestone.findUnique({ where: { id }, select: { completedAt: true } }) : null;
   const data = {
     projectId,
     title,
     description: str(form, "description") || null,
-    status,
+    status: status as never,
     startDate: date(form, "startDate"),
     dueDate: date(form, "dueDate"),
     ownerId: nullable(form, "ownerId"),
-    order: int(form, "order"),
-    completedAt: str(form, "status") === "COMPLETED" ? new Date() : null,
+    // Re-saving a finished milestone keeps the day it was really finished.
+    completedAt: status === "COMPLETED" ? (before?.completedAt ?? new Date()) : null,
   };
 
+  // Editing keeps the row's place; a new milestone goes to the end.
   if (id) await prisma.milestone.update({ where: { id }, data });
-  else await prisma.milestone.create({ data });
+  else await prisma.milestone.create({ data: { ...data, order: await prisma.milestone.count({ where: { projectId } }) } });
 
   revalidatePath(`/admin/client-projects/${projectId}`);
 }
@@ -698,4 +718,52 @@ export async function addTaskComment(taskId: string, form: FormData): Promise<vo
 
   await prisma.taskComment.create({ data: { taskId, authorId: session.id, body } });
   revalidatePath("/admin/tasks");
+}
+
+// ------------------------------------------------------------- bulk: leads
+
+const LEAD_STAGES = ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "WON", "LOST"];
+
+/**
+ * One action over the leads ticked in the list: "delete", "status:<STAGE>",
+ * "owner:<userId>" or "owner:none".
+ */
+export async function bulkLeads(ids: string[], action: string): Promise<{ error?: string; message?: string }> {
+  const session = await requirePermission("leads", "write");
+  const targets = ids.filter((id) => typeof id === "string" && id).slice(0, 500);
+  if (!targets.length) return { error: "Select at least one lead." };
+  const where = { id: { in: targets } };
+  const n = `${targets.length} lead${targets.length === 1 ? "" : "s"}`;
+
+  if (action === "delete") {
+    // Quotations, partner referrals and chats keep their own history; they
+    // only lose the link back. Notes belong to the lead and go with it.
+    await prisma.quotation.updateMany({ where: { leadId: { in: targets } }, data: { leadId: null } });
+    await prisma.partnerReferral.updateMany({ where: { leadId: { in: targets } }, data: { leadId: null } });
+    await prisma.chatSession.updateMany({ where: { leadId: { in: targets } }, data: { leadId: null } });
+    await prisma.enquiryNote.deleteMany({ where: { enquiryId: { in: targets } } });
+    await prisma.enquiry.deleteMany({ where });
+    await logActivity(session.id, "bulk_delete", "Enquiry", undefined, `Deleted ${n}`);
+    revalidatePath("/admin/leads");
+    return { message: `${n} deleted.` };
+  }
+
+  const [kind, value] = action.split(":");
+  if (kind === "status" && LEAD_STAGES.includes(value)) {
+    await prisma.enquiry.updateMany({ where, data: { status: value as never } });
+  } else if (kind === "owner" && value) {
+    const ownerId = value === "none" ? null : value;
+    if (ownerId && !(await prisma.user.findFirst({ where: { id: ownerId, isActive: true }, select: { id: true } }))) {
+      return { error: "That person is not an active user." };
+    }
+    await prisma.enquiry.updateMany({ where, data: { ownerId } });
+  } else if (action === "read") {
+    await prisma.enquiry.updateMany({ where, data: { isRead: true } });
+  } else {
+    return { error: "Unknown action." };
+  }
+
+  await logActivity(session.id, "bulk_update", "Enquiry", undefined, `${action} on ${n}`);
+  revalidatePath("/admin/leads");
+  return { message: `${n} updated.` };
 }

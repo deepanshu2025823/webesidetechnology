@@ -1,8 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { saveProjectRecord, type ActionState } from "@/app/admin/actions/crm";
 import { Alert, Card, FieldWrap, SubmitButton, inputClass } from "@/components/admin/ui";
+import { CYCLES, GST_MODES, pricingLines } from "@/lib/project-pricing";
+import { formatMoney } from "@/lib/utils";
 
 type ProjectValue = {
   id: string;
@@ -14,6 +16,13 @@ type ProjectValue = {
   health: string;
   commercial: string;
   budget: number;
+  projectCost?: number;
+  subscriptionCost?: number;
+  subscriptionCycle?: string;
+  maintenanceCost?: number;
+  maintenanceCycle?: string;
+  gstMode?: string;
+  gstRate?: number;
   startDate: string | null;
   endDate: string | null;
   objectives: string | null;
@@ -51,6 +60,21 @@ export function ClientProjectForm({
   defaultClientId?: string;
 }) {
   const [state, action] = useActionState<ActionState, FormData>(saveProjectRecord, {});
+  const [pricing, setPricing] = useState({
+    projectCost: project?.projectCost ?? 0,
+    subscriptionCost: project?.subscriptionCost ?? 0,
+    subscriptionCycle: project?.subscriptionCycle ?? "MONTHLY",
+    maintenanceCost: project?.maintenanceCost ?? 0,
+    maintenanceCycle: project?.maintenanceCycle ?? "MONTHLY",
+    gstMode: project?.gstMode ?? "NONE",
+    gstRate: project?.gstRate ?? 18,
+  });
+  const set = (key: keyof typeof pricing) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setPricing((p) => ({
+      ...p,
+      [key]: typeof p[key] === "number" ? Number(e.target.value) || 0 : e.target.value,
+    }));
+  const lines = pricingLines(pricing);
 
   return (
     <form action={action} className="space-y-6">
@@ -117,6 +141,83 @@ export function ClientProjectForm({
           </Card>
 
           <Card
+            title="Pricing"
+            description="Fill only what applies — e.g. ₹25,000 to build it, then ₹5,000 a month subscription. Each is kept and billed separately."
+          >
+            <div className="grid gap-5 sm:grid-cols-6">
+              <FieldWrap label="Project cost (₹)" htmlFor="projectCost" help="One-time: development, setup." className="sm:col-span-6">
+                <input id="projectCost" name="projectCost" type="number" min={0} value={pricing.projectCost || ""} onChange={set("projectCost")} placeholder="25000" className={inputClass} />
+              </FieldWrap>
+
+              <FieldWrap label="Subscription cost (₹)" htmlFor="subscriptionCost" className="sm:col-span-4">
+                <input id="subscriptionCost" name="subscriptionCost" type="number" min={0} value={pricing.subscriptionCost || ""} onChange={set("subscriptionCost")} placeholder="5000" className={inputClass} />
+              </FieldWrap>
+              <FieldWrap label="Billed" htmlFor="subscriptionCycle" className="sm:col-span-2">
+                <select id="subscriptionCycle" name="subscriptionCycle" value={pricing.subscriptionCycle} onChange={set("subscriptionCycle")} className={inputClass}>
+                  {CYCLES.map(([v, l]) => (
+                    <option key={v} value={v}>{l}</option>
+                  ))}
+                </select>
+              </FieldWrap>
+
+              <FieldWrap label="Maintenance cost (₹)" htmlFor="maintenanceCost" className="sm:col-span-4">
+                <input id="maintenanceCost" name="maintenanceCost" type="number" min={0} value={pricing.maintenanceCost || ""} onChange={set("maintenanceCost")} className={inputClass} />
+              </FieldWrap>
+              <FieldWrap label="Billed" htmlFor="maintenanceCycle" className="sm:col-span-2">
+                <select id="maintenanceCycle" name="maintenanceCycle" value={pricing.maintenanceCycle} onChange={set("maintenanceCycle")} className={inputClass}>
+                  {CYCLES.map(([v, l]) => (
+                    <option key={v} value={v}>{l}</option>
+                  ))}
+                </select>
+              </FieldWrap>
+
+              <FieldWrap label="GST" htmlFor="gstMode" className="sm:col-span-4">
+                <select id="gstMode" name="gstMode" value={pricing.gstMode} onChange={set("gstMode")} className={inputClass}>
+                  {GST_MODES.map(([v, l]) => (
+                    <option key={v} value={v}>{l}</option>
+                  ))}
+                </select>
+              </FieldWrap>
+              <FieldWrap label="GST rate (%)" htmlFor="gstRate" className="sm:col-span-2">
+                <input id="gstRate" name="gstRate" type="number" min={0} max={100} step="0.01" value={pricing.gstRate} onChange={set("gstRate")} disabled={pricing.gstMode === "NONE"} className={inputClass} />
+              </FieldWrap>
+            </div>
+
+            {lines.length ? (
+              <table className="mt-6 w-full text-sm">
+                <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="py-2 font-medium">Charge</th>
+                    {pricing.gstMode !== "NONE" ? (
+                      <>
+                        <th className="py-2 text-right font-medium">Base</th>
+                        <th className="py-2 text-right font-medium">GST {pricing.gstRate}%</th>
+                      </>
+                    ) : null}
+                    <th className="py-2 text-right font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-navy-900/5">
+                  {lines.map((l) => (
+                    <tr key={l.key}>
+                      <td className="py-2 text-navy-900">
+                        {l.label} <span className="text-xs text-slate-500">{l.note}</span>
+                      </td>
+                      {pricing.gstMode !== "NONE" ? (
+                        <>
+                          <td className="py-2 text-right text-slate-600">{formatMoney(l.base)}</td>
+                          <td className="py-2 text-right text-slate-600">{formatMoney(l.gst)}</td>
+                        </>
+                      ) : null}
+                      <td className="py-2 text-right font-semibold text-navy-900">{formatMoney(l.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </Card>
+
+          <Card
             title="Scope baseline"
             description="What was agreed. Editing these bumps the scope version so the original stays auditable."
           >
@@ -177,7 +278,7 @@ export function ClientProjectForm({
                 <input id="endDate" name="endDate" type="date" defaultValue={project?.endDate ?? ""} className={inputClass} />
               </FieldWrap>
 
-              <FieldWrap label="Budget (₹)" htmlFor="budget">
+              <FieldWrap label="Internal budget (₹)" htmlFor="budget" help="Your own cost ceiling. What the client pays goes under Pricing.">
                 <input id="budget" name="budget" type="number" min={0} defaultValue={project?.budget ?? 0} className={inputClass} />
               </FieldWrap>
             </div>

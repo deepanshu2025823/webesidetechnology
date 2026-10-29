@@ -55,6 +55,16 @@ const IMAGES = [
   ["photo-1519085360753-af0119f7cbe7", "team-3", "square"],
   ["photo-1580489944761-15a19d654956", "team-4", "square"],
 
+  // Industries we serve (home page band)
+  ["photo-1524178232363-1fb2b075b655", "industry-education", "card"],
+  ["photo-1576091160399-112ba8d25d1d", "industry-healthcare", "card"],
+  ["photo-1436491865332-7a61a109cc05", "industry-travel", "card"],
+  ["photo-1503376780353-7e6692767b70", "industry-limousine", "card"],
+  ["photo-1441986300917-64674bd600d8", "industry-retail", "card"],
+  ["photo-1560518883-ce09059eeffa", "industry-real-estate", "card"],
+  ["photo-1517248135467-4c7edcad34c4", "industry-hospitality", "card"],
+  ["photo-1556761175-5973dc0f32e7", "industry-corporate", "card"],
+
   // Page headers
   ["photo-1522071820081-009f0129c71c", "page-about", "wide"],
   ["photo-1524758631624-e2822e304c36", "page-contact", "wide"],

@@ -192,6 +192,54 @@
       "file": "/uploads/stock/page-contact.webp",
       "source": "https://unsplash.com/photos/photo-1524758631624-e2822e304c36",
       "bytes": 80754
+    },
+    {
+      "name": "industry-travel",
+      "file": "/uploads/stock/industry-travel.webp",
+      "source": "https://unsplash.com/photos/photo-1436491865332-7a61a109cc05",
+      "bytes": 30310
+    },
+    {
+      "name": "industry-limousine",
+      "file": "/uploads/stock/industry-limousine.webp",
+      "source": "https://unsplash.com/photos/photo-1503376780353-7e6692767b70",
+      "bytes": 42248
+    },
+    {
+      "name": "industry-real-estate",
+      "file": "/uploads/stock/industry-real-estate.webp",
+      "source": "https://unsplash.com/photos/photo-1560518883-ce09059eeffa",
+      "bytes": 32760
+    },
+    {
+      "name": "industry-hospitality",
+      "file": "/uploads/stock/industry-hospitality.webp",
+      "source": "https://unsplash.com/photos/photo-1517248135467-4c7edcad34c4",
+      "bytes": 138428
+    },
+    {
+      "name": "industry-education",
+      "file": "/uploads/stock/industry-education.webp",
+      "source": "https://unsplash.com/photos/photo-1524178232363-1fb2b075b655",
+      "bytes": 68860
+    },
+    {
+      "name": "industry-corporate",
+      "file": "/uploads/stock/industry-corporate.webp",
+      "source": "https://unsplash.com/photos/photo-1556761175-5973dc0f32e7",
+      "bytes": 163126
+    },
+    {
+      "name": "industry-healthcare",
+      "file": "/uploads/stock/industry-healthcare.webp",
+      "source": "https://unsplash.com/photos/photo-1576091160399-112ba8d25d1d",
+      "bytes": 40358
+    },
+    {
+      "name": "industry-retail",
+      "file": "/uploads/stock/industry-retail.webp",
+      "source": "https://unsplash.com/photos/photo-1441986300917-64674bd600d8",
+      "bytes": 91390
     }
   ]
 }

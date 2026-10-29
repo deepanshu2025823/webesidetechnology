@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { NotificationBell } from "@/components/admin/NotificationBell";
+import { ActivityHeartbeat } from "@/components/admin/ActivityHeartbeat";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -19,6 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="lg:flex">
+      <ActivityHeartbeat />
       <Sidebar user={{ name: session.name, email: session.email, role: session.role }} />
       <div className="min-w-0 flex-1">
         <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">

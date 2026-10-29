@@ -216,6 +216,7 @@ export const COLLECTIONS: Record<string, Collection> = {
         colSpan: 2,
         help: "Optional. Keep it short — it sits under the name on a small card.",
       },
+      { name: "image", label: "Picture", type: "image", help: "Landscape, about 3:2. The icon shows as a badge on it." },
       { name: "icon", label: "Icon", type: "icon", defaultValue: "Building2" },
       ACTIVE_FIELD,
       ORDER_FIELD,

@@ -28,14 +28,14 @@ const HIGHLIGHTS = [
  * stores. Editable at /admin/industries.
  */
 const INDUSTRIES = [
-  { icon: "GraduationCap", name: "Education & EdTech", description: "LMS portals, institute websites and admission campaigns." },
-  { icon: "HeartPulse", name: "Healthcare & Locum Staffing", description: "Clinic websites, locum management portals and patient enquiries." },
-  { icon: "Plane", name: "Travel & Tourism", description: "Booking-ready travel portals, packages and seasonal ad campaigns." },
-  { icon: "Car", name: "Limousine & Transport", description: "Limo booking portals, fleet dispatch and local search visibility." },
-  { icon: "ShoppingBag", name: "Retail & E-commerce", description: "Shopify and custom stores, product ads and catalogue SEO." },
-  { icon: "Building2", name: "Real Estate & Construction", description: "Project microsites, lead capture and ads that book site visits." },
-  { icon: "UtensilsCrossed", name: "Hospitality & Restaurants", description: "Reservations, Google Business profiles, menus and reels." },
-  { icon: "Briefcase", name: "Corporate & B2B Services", description: "CRM and HRMS portals, company websites and lead generation." },
+  { icon: "GraduationCap", image: "/uploads/stock/industry-education.webp", name: "Education & EdTech", description: "LMS portals, institute websites and admission campaigns." },
+  { icon: "HeartPulse", image: "/uploads/stock/industry-healthcare.webp", name: "Healthcare & Locum Staffing", description: "Clinic websites, locum management portals and patient enquiries." },
+  { icon: "Plane", image: "/uploads/stock/industry-travel.webp", name: "Travel & Tourism", description: "Booking-ready travel portals, packages and seasonal ad campaigns." },
+  { icon: "Car", image: "/uploads/stock/industry-limousine.webp", name: "Limousine & Transport", description: "Limo booking portals, fleet dispatch and local search visibility." },
+  { icon: "ShoppingBag", image: "/uploads/stock/industry-retail.webp", name: "Retail & E-commerce", description: "Shopify and custom stores, product ads and catalogue SEO." },
+  { icon: "Building2", image: "/uploads/stock/industry-real-estate.webp", name: "Real Estate & Construction", description: "Project microsites, lead capture and ads that book site visits." },
+  { icon: "UtensilsCrossed", image: "/uploads/stock/industry-hospitality.webp", name: "Hospitality & Restaurants", description: "Reservations, Google Business profiles, menus and reels." },
+  { icon: "Briefcase", image: "/uploads/stock/industry-corporate.webp", name: "Corporate & B2B Services", description: "CRM and HRMS portals, company websites and lead generation." },
 ];
 
 const WHY = {
@@ -89,7 +89,14 @@ async function main() {
     await prisma.industry.createMany({ data: INDUSTRIES.map((i, order) => ({ ...i, order })) });
     console.log(`industries: seeded ${INDUSTRIES.length}`);
   } else {
-    console.log(`industries: ${industries} already present, left alone`);
+    // Cards seeded before pictures existed get theirs; one an editor has
+    // already given a picture keeps it.
+    let pictured = 0;
+    for (const item of INDUSTRIES) {
+      const { count } = await prisma.industry.updateMany({ where: { name: item.name, image: null }, data: { image: item.image } });
+      pictured += count;
+    }
+    console.log(`industries: ${industries} already present, ${pictured} given a picture`);
   }
 
   // ------------------------------------------------------- why-us block

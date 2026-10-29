@@ -5,6 +5,8 @@ import { requireModule } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
 import { DataTools } from "@/components/admin/DataTools";
+import { BulkCheckbox, BulkSelect, BulkSelectAll, type BulkAction } from "@/components/admin/BulkSelect";
+import { bulkLeads } from "@/app/admin/actions/crm";
 import { cn, formatDate } from "@/lib/utils";
 
 const STAGES = ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "WON", "LOST"] as const;
@@ -58,6 +60,15 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     prisma.enquiry.groupBy({ by: ["status"], _count: { _all: true }, where: scopeWhere }),
     prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
   ]);
+
+  const mayBulk = canEdit(session.role, "leads");
+  const bulkActions: BulkAction[] = [
+    ...STAGES.map((st) => ({ value: `status:${st}`, label: st.charAt(0) + st.slice(1).toLowerCase(), group: "Move to stage…" })),
+    { value: "owner:none", label: "Unassigned", group: "Assign to…" },
+    ...owners.map((o) => ({ value: `owner:${o.id}`, label: o.name, group: "Assign to…" })),
+    { value: "read", label: "Mark as read" },
+    { value: "delete", label: "Delete", danger: true },
+  ];
 
   const countFor = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
   const total = counts.reduce((sum, c) => sum + c._count._all, 0);
@@ -163,74 +174,86 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-sm">
-          <div className="scroll-slim overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-navy-900/10 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-5 py-3 font-medium">Lead</th>
-                  <th className="px-5 py-3 font-medium">Interest</th>
-                  <th className="px-5 py-3 font-medium">Owner</th>
-                  <th className="px-5 py-3 font-medium">Stage</th>
-                  <th className="px-5 py-3 font-medium">Follow-up</th>
-                  <th className="px-5 py-3 font-medium">Received</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-navy-900/5">
-                {leads.map((lead) => {
-                  const overdue =
-                    lead.nextFollowUpAt && lead.nextFollowUpAt <= today && lead.status !== "WON" && lead.status !== "LOST";
-                  return (
-                    <tr key={lead.id} className={cn("hover:bg-slate-50/70", !lead.isRead && "bg-gold-50/40")}>
-                      <td className="px-5 py-3.5">
-                        <Link href={`/admin/leads/${lead.id}`} className="block">
-                          <span className="flex items-center gap-2 font-medium text-navy-900 hover:text-gold-700">
-                            {lead.name}
-                            {!lead.isRead ? <Badge tone="warn">New</Badge> : null}
-                            {lead.score >= 70 ? <Flame className="size-3.5 text-gold-600" aria-label="Hot lead" /> : null}
-                          </span>
-                          <span className="block text-xs text-slate-500">{lead.company || lead.email}</span>
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3.5 text-slate-600">
-                        {lead.serviceInterest || "—"}
-                        {lead.budget ? <span className="block text-xs text-slate-400">{lead.budget}</span> : null}
-                      </td>
-                      <td className="px-5 py-3.5 text-slate-600">{lead.owner?.name ?? "Unassigned"}</td>
-                      <td className="px-5 py-3.5">
-                        <Badge tone={TONE[lead.status]}>{lead.status.toLowerCase()}</Badge>
-                        {lead.client ? (
-                          <Link
-                            href={`/admin/clients/${lead.client.id}`}
-                            className="mt-1 block text-xs text-gold-700 hover:underline"
-                          >
-                            {lead.client.name}
-                          </Link>
+        <BulkSelect ids={leads.map((l) => l.id)} actions={bulkActions} run={bulkLeads} noun={["lead", "leads"]}>
+          <div className="overflow-hidden rounded-2xl border border-navy-900/10 bg-white shadow-sm">
+            <div className="scroll-slim overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-navy-900/10 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    {mayBulk ? (
+                      <th className="w-10 py-3 pl-5">
+                        <BulkSelectAll />
+                      </th>
+                    ) : null}
+                    <th className="px-5 py-3 font-medium">Lead</th>
+                    <th className="px-5 py-3 font-medium">Interest</th>
+                    <th className="px-5 py-3 font-medium">Owner</th>
+                    <th className="px-5 py-3 font-medium">Stage</th>
+                    <th className="px-5 py-3 font-medium">Follow-up</th>
+                    <th className="px-5 py-3 font-medium">Received</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-navy-900/5">
+                  {leads.map((lead) => {
+                    const overdue =
+                      lead.nextFollowUpAt && lead.nextFollowUpAt <= today && lead.status !== "WON" && lead.status !== "LOST";
+                    return (
+                      <tr key={lead.id} className={cn("hover:bg-slate-50/70", !lead.isRead && "bg-gold-50/40")}>
+                        {mayBulk ? (
+                          <td className="py-3.5 pl-5">
+                            <BulkCheckbox id={lead.id} label={lead.name} />
+                          </td>
                         ) : null}
-                      </td>
-                      <td className="px-5 py-3.5 text-xs">
-                        {lead.nextFollowUpAt ? (
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1",
-                              overdue ? "font-medium text-red-600" : "text-slate-500",
-                            )}
-                          >
-                            <CircleDot className="size-3" aria-hidden />
-                            {formatDate(lead.nextFollowUpAt)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5 text-xs text-slate-500">{formatDate(lead.createdAt)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        <td className="px-5 py-3.5">
+                          <Link href={`/admin/leads/${lead.id}`} className="block">
+                            <span className="flex items-center gap-2 font-medium text-navy-900 hover:text-gold-700">
+                              {lead.name}
+                              {!lead.isRead ? <Badge tone="warn">New</Badge> : null}
+                              {lead.score >= 70 ? <Flame className="size-3.5 text-gold-600" aria-label="Hot lead" /> : null}
+                            </span>
+                            <span className="block text-xs text-slate-500">{lead.company || lead.email}</span>
+                          </Link>
+                        </td>
+                        <td className="px-5 py-3.5 text-slate-600">
+                          {lead.serviceInterest || "—"}
+                          {lead.budget ? <span className="block text-xs text-slate-400">{lead.budget}</span> : null}
+                        </td>
+                        <td className="px-5 py-3.5 text-slate-600">{lead.owner?.name ?? "Unassigned"}</td>
+                        <td className="px-5 py-3.5">
+                          <Badge tone={TONE[lead.status]}>{lead.status.toLowerCase()}</Badge>
+                          {lead.client ? (
+                            <Link
+                              href={`/admin/clients/${lead.client.id}`}
+                              className="mt-1 block text-xs text-gold-700 hover:underline"
+                            >
+                              {lead.client.name}
+                            </Link>
+                          ) : null}
+                        </td>
+                        <td className="px-5 py-3.5 text-xs">
+                          {lead.nextFollowUpAt ? (
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1",
+                                overdue ? "font-medium text-red-600" : "text-slate-500",
+                              )}
+                            >
+                              <CircleDot className="size-3" aria-hidden />
+                              {formatDate(lead.nextFollowUpAt)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5 text-xs text-slate-500">{formatDate(lead.createdAt)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </BulkSelect>
       )}
     </>
   );

@@ -2,7 +2,7 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import Link from "next/link";
-import { CalendarClock, Flag, Trash2, User } from "lucide-react";
+import { CalendarClock, Flag, Loader2, Trash2, User } from "lucide-react";
 import { deleteTask, setTaskStatus } from "@/app/admin/actions/crm";
 import { Badge } from "@/components/admin/ui";
 import { cn, formatDate } from "@/lib/utils";
@@ -55,7 +55,7 @@ export function TaskBoard({
     (state: BoardTask[], change: { id: string; status: string }) =>
       state.map((t) => (t.id === change.id ? { ...t, status: change.status } : t)),
   );
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState<string | null>(null);
 
   const move = (id: string, status: string) =>
@@ -68,6 +68,15 @@ export function TaskBoard({
   today.setHours(23, 59, 59, 999);
 
   return (
+    <>
+    {/* Moves are optimistic, but the save behind them still takes a moment. */}
+    <p aria-live="polite" className={cn("mb-2 h-4 text-xs text-slate-500 transition-opacity", pending ? "opacity-100" : "opacity-0")}>
+      {pending ? (
+        <span className="inline-flex items-center gap-1.5">
+          <Loader2 className="size-3 animate-spin" aria-hidden /> Saving…
+        </span>
+      ) : null}
+    </p>
     <div className="scroll-slim -mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
       {COLUMNS.map((column) => {
         const cards = optimistic.filter((t) => t.status === column.key);
@@ -163,5 +172,6 @@ export function TaskBoard({
         );
       })}
     </div>
+    </>
   );
 }

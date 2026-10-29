@@ -20,7 +20,12 @@ function useBulk() {
   return ctx;
 }
 
-export type BulkAction = { value: string; label: string; danger?: boolean };
+/**
+ * One button in the bar. Actions sharing a `group` collapse into a single
+ * dropdown named after it — "Move to stage…", "Assign to…" — so a list with a
+ * dozen targets does not become a dozen buttons.
+ */
+export type BulkAction = { value: string; label: string; danger?: boolean; group?: string };
 
 export function BulkSelect({
   ids,
@@ -78,7 +83,29 @@ export function BulkSelect({
           <span className="mr-2 font-semibold">
             {count} {count === 1 ? noun[0] : noun[1]} selected
           </span>
-          {actions.map((action) => (
+          {[...new Set(actions.filter((a) => a.group).map((a) => a.group!))].map((group) => (
+            <select
+              key={group}
+              disabled={pending}
+              value=""
+              aria-label={group}
+              onChange={(e) => {
+                const action = actions.find((a) => a.group === group && a.value === e.target.value);
+                if (action) execute(action);
+              }}
+              className="rounded-lg border-0 bg-white/10 px-2.5 py-1.5 text-xs font-semibold text-white focus:ring-2 focus:ring-gold-400 disabled:opacity-60 [&>option]:text-navy-900"
+            >
+              <option value="">{group}</option>
+              {actions
+                .filter((a) => a.group === group)
+                .map((a) => (
+                  <option key={a.value} value={a.value}>
+                    {a.label}
+                  </option>
+                ))}
+            </select>
+          ))}
+          {actions.filter((a) => !a.group).map((action) => (
             <button
               key={action.value}
               type="button"

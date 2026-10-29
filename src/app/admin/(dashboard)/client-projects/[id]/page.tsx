@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, GitPullRequest, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Building2, GitPullRequest, Pencil, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
 import { canEdit } from "@/lib/permissions";
@@ -13,10 +13,12 @@ import {
 import { Badge, Card, PageHeader, inputClass } from "@/components/admin/ui";
 import { TaskBoard } from "@/components/admin/TaskBoard";
 import { TaskQuickAdd } from "@/components/admin/TaskQuickAdd";
+import { MILESTONE_STATUSES, MilestoneList } from "@/components/admin/MilestoneList";
+import { PendingButton } from "@/components/admin/PendingButton";
+import { pricingLines } from "@/lib/project-pricing";
 import { cn, formatDate, formatMoney } from "@/lib/utils";
 
 const HEALTH_TONE = { ON_TRACK: "success", AT_RISK: "warn", DELAYED: "muted" } as const;
-const MILESTONE_STATUSES = ["PENDING", "IN_PROGRESS", "CLIENT_REVIEW", "COMPLETED", "BLOCKED"];
 const pretty = (v: string) => v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, " ");
 
 export default async function ClientProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,6 +57,8 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
   const progress = project.tasks.length ? Math.round((done / project.tasks.length) * 100) : 0;
 
   const addMilestone = saveMilestone.bind(null, project.id);
+  const removeMilestone = deleteMilestone.bind(null, project.id);
+  const charges = pricingLines(project);
   const addChangeRequest = saveChangeRequest.bind(null, project.id);
 
   const scope = [
@@ -111,49 +115,51 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
           </p>
         </div>
         <div className="rounded-2xl border border-navy-900/10 bg-white p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Budget</p>
-          <p className="mt-1 font-medium text-navy-900">{project.budget ? formatMoney(project.budget) : "—"}</p>
-          {project.endDate ? (
-            <p className="text-xs text-slate-500">due {formatDate(project.endDate)}</p>
-          ) : null}
+          <p className="text-xs uppercase tracking-wide text-slate-500">Pricing</p>
+          {charges.length ? (
+            <ul className="mt-1 space-y-0.5 text-sm">
+              {charges.map((c) => (
+                <li key={c.key} className="flex justify-between gap-2">
+                  <span className="text-slate-500">{c.label}</span>
+                  <span className="font-medium text-navy-900">
+                    {formatMoney(c.total)} <span className="text-xs font-normal text-slate-500">{c.note}</span>
+                  </span>
+                </li>
+              ))}
+              <li className="text-xs text-slate-500">
+                {project.gstMode === "NONE"
+                  ? "No GST"
+                  : `${project.gstMode === "INCLUSIVE" ? "Includes" : "Plus"} GST ${project.gstRate}%`}
+              </li>
+            </ul>
+          ) : (
+            <p className="mt-1 font-medium text-navy-900">
+              {project.budget ? formatMoney(project.budget) : "—"}
+              {project.budget ? <span className="block text-xs font-normal text-slate-500">budget · set prices in Edit scope</span> : null}
+            </p>
+          )}
+          {project.endDate ? <p className="text-xs text-slate-500">due {formatDate(project.endDate)}</p> : null}
         </div>
       </div>
 
       <div className="space-y-6">
         <Card title="Milestones" description="Dated checkpoints the client can see progress against.">
-          {project.milestones.length ? (
-            <ol className="mb-5 space-y-2">
-              {project.milestones.map((m) => (
-                <li
-                  key={m.id}
-                  className="flex flex-wrap items-center gap-3 rounded-xl border border-navy-900/10 bg-slate-50 px-4 py-3"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-navy-900">{m.title}</span>
-                    {m.description ? <span className="block text-xs text-slate-500">{m.description}</span> : null}
-                  </span>
-                  <Badge tone={m.status === "COMPLETED" ? "success" : m.status === "BLOCKED" ? "warn" : "neutral"}>
-                    {pretty(m.status)}
-                  </Badge>
-                  {m.dueDate ? <span className="text-xs text-slate-500">{formatDate(m.dueDate)}</span> : null}
-                  {m.owner ? <span className="text-xs text-slate-500">{m.owner.name}</span> : null}
-                  {editable ? (
-                    <form action={deleteMilestone.bind(null, project.id, m.id)}>
-                      <button
-                        type="submit"
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                        aria-label={`Delete ${m.title}`}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </form>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="mb-5 text-sm text-slate-500">No milestones yet.</p>
-          )}
+          <MilestoneList
+            editable={editable}
+            owners={assignees}
+            save={addMilestone}
+            remove={removeMilestone}
+            milestones={project.milestones.map((m) => ({
+              id: m.id,
+              title: m.title,
+              description: m.description,
+              status: m.status,
+              startDate: m.startDate ? m.startDate.toISOString() : null,
+              dueDate: m.dueDate ? m.dueDate.toISOString() : null,
+              ownerId: m.ownerId,
+              owner: m.owner?.name ?? null,
+            }))}
+          />
 
           {editable ? (
             <form action={addMilestone} className="grid gap-3 rounded-xl border border-navy-900/10 bg-slate-50 p-4 sm:grid-cols-12">
@@ -174,12 +180,13 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
                   </option>
                 ))}
               </select>
-              <button
-                type="submit"
+              <PendingButton
+                icon={<Plus className="size-4" aria-hidden />}
+                pendingLabel="Adding…"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-800 sm:col-span-12"
               >
-                <Plus className="size-4" aria-hidden /> Add milestone
-              </button>
+                Add milestone
+              </PendingButton>
             </form>
           ) : null}
         </Card>
@@ -277,17 +284,16 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
                         {["APPROVED", "REJECTED"].map((decision) => (
                           <form key={decision} action={decideChangeRequest.bind(null, project.id, cr.id)}>
                             <input type="hidden" name="status" value={decision} />
-                            <button
-                              type="submit"
+                            <PendingButton
                               className={cn(
-                                "rounded-lg px-3 py-1.5 text-xs font-semibold",
+                                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold",
                                 decision === "APPROVED"
                                   ? "bg-navy-900 text-white hover:bg-navy-800"
                                   : "border border-navy-900/15 text-navy-700 hover:bg-slate-50",
                               )}
                             >
                               {decision === "APPROVED" ? "Approve" : "Reject"}
-                            </button>
+                            </PendingButton>
                           </form>
                         ))}
                       </div>
@@ -307,12 +313,13 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
                   <input name="costImpact" type="number" placeholder="Cost impact ₹" className={inputClass} aria-label="Cost impact" />
                   <input name="timeImpactDays" type="number" placeholder="Extra days" className={inputClass} aria-label="Time impact in days" />
                 </div>
-                <button
-                  type="submit"
+                <PendingButton
+                  icon={<GitPullRequest className="size-4" aria-hidden />}
+                  pendingLabel="Raising…"
                   className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-800"
                 >
-                  <GitPullRequest className="size-4" aria-hidden /> Raise change request
-                </button>
+                  Raise change request
+                </PendingButton>
               </form>
             ) : null}
           </Card>
