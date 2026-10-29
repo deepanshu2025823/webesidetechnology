@@ -13,12 +13,15 @@ import {
 import { Badge, Card, PageHeader, inputClass } from "@/components/admin/ui";
 import { TaskBoard } from "@/components/admin/TaskBoard";
 import { TaskQuickAdd } from "@/components/admin/TaskQuickAdd";
-import { MILESTONE_STATUSES, MilestoneList } from "@/components/admin/MilestoneList";
+import { MilestoneList } from "@/components/admin/MilestoneList";
 import { PendingButton } from "@/components/admin/PendingButton";
 import { pricingLines } from "@/lib/project-pricing";
 import { cn, formatDate, formatMoney } from "@/lib/utils";
 
 const HEALTH_TONE = { ON_TRACK: "success", AT_RISK: "warn", DELAYED: "muted" } as const;
+// Kept here rather than imported: a constant exported from a "use client" file
+// arrives in a server component as a client reference, not as the array.
+const MILESTONE_STATUSES = ["PENDING", "IN_PROGRESS", "CLIENT_REVIEW", "COMPLETED", "BLOCKED"];
 const pretty = (v: string) => v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, " ");
 
 export default async function ClientProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {

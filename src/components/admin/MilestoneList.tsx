@@ -6,7 +6,7 @@ import { Badge, inputClass } from "@/components/admin/ui";
 import { PendingButton } from "@/components/admin/PendingButton";
 import { formatDate } from "@/lib/utils";
 
-export const MILESTONE_STATUSES = ["PENDING", "IN_PROGRESS", "CLIENT_REVIEW", "COMPLETED", "BLOCKED"];
+const MILESTONE_STATUSES = ["PENDING", "IN_PROGRESS", "CLIENT_REVIEW", "COMPLETED", "BLOCKED"];
 const pretty = (v: string) => v.charAt(0) + v.slice(1).toLowerCase().replace(/_/g, " ");
 const day = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
