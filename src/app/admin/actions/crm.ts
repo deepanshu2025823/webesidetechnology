@@ -818,7 +818,7 @@ export async function saveMilestoneAsTemplate(projectId: string, milestoneId: st
   const existing = await prisma.milestoneTemplate.findFirst({ where: { title: milestone.title } });
   const data = {
     title: milestone.title,
-    description: milestone.description ?? "",
+    description: (milestone.description ?? "").slice(0, 1000),
     tasks: [...new Set(milestone.tasks.map((t) => t.title))],
   };
   if (existing) await prisma.milestoneTemplate.update({ where: { id: existing.id }, data });
