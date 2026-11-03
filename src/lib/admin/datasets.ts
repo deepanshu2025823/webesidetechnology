@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { nextCode } from "@/lib/admin/sequence";
 import { parseAmount, parseDate, parseEnum, pick } from "@/lib/admin/csv";
-import type { ModuleKey } from "@/lib/permissions";
+import type { FieldKey, ModuleKey } from "@/lib/permissions";
 import { slugify } from "@/lib/utils";
 import { parseVideo } from "@/lib/video";
 import type { Prisma } from "@/generated/prisma/client";
@@ -27,6 +27,9 @@ export type Filters = {
 };
 
 export type SummaryStat = { label: string; value: string };
+
+/** Answers whether the person exporting may see a sensitive field. */
+export type FieldFilter = (field: FieldKey) => boolean;
 
 export type ImportOutcome = {
   created: number;
@@ -54,7 +57,8 @@ export type Dataset = {
   /** Status chips offered by the toolbar, when the dataset has a status. */
   statuses?: { value: string; label: string }[];
   importer?: Importer;
-  fetch: (filters: Filters) => Promise<{ headers: string[]; rows: string[][]; stats: SummaryStat[] }>;
+  /** Columns and stats tied to a field the viewer cannot see are left out. */
+  fetch: (filters: Filters, canSeeField?: FieldFilter) => Promise<{ headers: string[]; rows: string[][]; stats: SummaryStat[] }>;
 };
 
 // ------------------------------------------------------------------ helpers
@@ -112,8 +116,8 @@ function defineDataset<T>(spec: {
   statuses?: { value: string; label: string }[];
   importer?: Importer;
   query: (filters: Filters) => Promise<T[]>;
-  columns: { label: string; value: (row: T) => unknown }[];
-  stats?: (rows: T[]) => SummaryStat[];
+  columns: { label: string; value: (row: T) => unknown; field?: FieldKey }[];
+  stats?: (rows: T[]) => (SummaryStat & { field?: FieldKey })[];
 }): Dataset {
   return {
     key: spec.key,
@@ -123,12 +127,14 @@ function defineDataset<T>(spec: {
     searchHint: spec.searchHint,
     statuses: spec.statuses,
     importer: spec.importer,
-    async fetch(filters) {
+    async fetch(filters, canSeeField = () => true) {
       const rows = await spec.query(filters);
+      const columns = spec.columns.filter((c) => !c.field || canSeeField(c.field));
+      const stats = (spec.stats?.(rows) ?? []).filter((st) => !st.field || canSeeField(st.field));
       return {
-        headers: spec.columns.map((c) => c.label),
-        rows: rows.map((row) => spec.columns.map((c) => text(c.value(row)))),
-        stats: [{ label: "Records", value: String(rows.length) }, ...(spec.stats?.(rows) ?? [])],
+        headers: columns.map((c) => c.label),
+        rows: rows.map((row) => columns.map((c) => text(c.value(row)))),
+        stats: [{ label: "Records", value: String(rows.length) }, ...stats.map(({ label, value }) => ({ label, value }))],
       };
     },
   };
@@ -707,8 +713,8 @@ export const DATASETS: Record<string, Dataset> = {
       }),
     columns: [
       { label: "Name", value: (r) => r.name },
-      { label: "Email", value: (r) => r.email },
-      { label: "Phone", value: (r) => r.phone },
+      { label: "Email", value: (r) => r.email, field: "leads.contact" },
+      { label: "Phone", value: (r) => r.phone, field: "leads.contact" },
       { label: "Company", value: (r) => r.company },
       { label: "Service Interest", value: (r) => r.serviceInterest },
       { label: "Budget", value: (r) => r.budget },
@@ -757,13 +763,13 @@ export const DATASETS: Record<string, Dataset> = {
       { label: "Company Name", value: (r) => r.name },
       { label: "Industry", value: (r) => r.industry },
       { label: "Status", value: (r) => humanise(r.status) },
-      { label: "Contact Name", value: (r) => r.contacts[0]?.name },
-      { label: "Contact Email", value: (r) => r.contacts[0]?.email },
-      { label: "Contact Phone", value: (r) => r.contacts[0]?.phone },
+      { label: "Contact Name", value: (r) => r.contacts[0]?.name, field: "clients.contacts" },
+      { label: "Contact Email", value: (r) => r.contacts[0]?.email, field: "clients.contacts" },
+      { label: "Contact Phone", value: (r) => r.contacts[0]?.phone, field: "clients.contacts" },
       { label: "Website", value: (r) => r.website },
-      { label: "GSTIN", value: (r) => r.gstin },
-      { label: "City", value: (r) => r.city },
-      { label: "State", value: (r) => r.state },
+      { label: "GSTIN", value: (r) => r.gstin, field: "clients.billing" },
+      { label: "City", value: (r) => r.city, field: "clients.billing" },
+      { label: "State", value: (r) => r.state, field: "clients.billing" },
       { label: "Account Manager", value: (r) => r.owner?.name },
       { label: "Health Score", value: (r) => r.healthScore },
       { label: "Projects", value: (r) => r._count.projects },
@@ -868,7 +874,7 @@ export const DATASETS: Record<string, Dataset> = {
       { label: "Stage", value: (r) => humanise(r.stage) },
       { label: "Health", value: (r) => humanise(r.health) },
       { label: "Commercial", value: (r) => humanise(r.commercial) },
-      { label: "Budget", value: (r) => money(r.budget) },
+      { label: "Budget", value: (r) => money(r.budget), field: "projects.pricing" },
       { label: "Manager", value: (r) => r.manager?.name },
       { label: "Start Date", value: (r) => r.startDate },
       { label: "End Date", value: (r) => r.endDate },
@@ -877,7 +883,7 @@ export const DATASETS: Record<string, Dataset> = {
     ],
     stats: (rows) => [
       { label: "Active", value: String(rows.filter((r) => r.stage === "ACTIVE").length) },
-      { label: "Budget", value: `₹${money(total(rows, "budget"))}` },
+      { label: "Budget", value: `₹${money(total(rows, "budget"))}`, field: "projects.pricing" },
       { label: "At risk", value: String(rows.filter((r) => r.health !== "ON_TRACK").length) },
     ],
   }),

@@ -1,14 +1,17 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Building2, GitPullRequest, Pencil, Plus } from "lucide-react";
+import { ArrowLeft, BookMarked, Building2, GitPullRequest, Pencil, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
-import { canEdit } from "@/lib/permissions";
+import { requireProjectAccess } from "@/lib/project-access";
+import { canEdit, canSee } from "@/lib/permissions";
 import {
+  addMilestoneFromTemplate,
   decideChangeRequest,
   deleteMilestone,
   saveChangeRequest,
   saveMilestone,
+  saveMilestoneAsTemplate,
 } from "@/app/admin/actions/crm";
 import { Badge, Card, PageHeader, inputClass } from "@/components/admin/ui";
 import { TaskBoard } from "@/components/admin/TaskBoard";
@@ -27,6 +30,7 @@ const pretty = (v: string) => v.charAt(0) + v.slice(1).toLowerCase().replace(/_/
 export default async function ClientProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requireModule("projects");
   const { id } = await params;
+  await requireProjectAccess(session, id);
 
   const project = await prisma.clientProject.findUnique({
     where: { id },
@@ -48,8 +52,8 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
   });
   if (!project) notFound();
 
-  const editable = canEdit(session.role, "projects");
-  const canEditTasks = canEdit(session.role, "tasks");
+  const editable = canEdit(session, "projects");
+  const canEditTasks = canEdit(session, "tasks");
   const assignees = await prisma.user.findMany({
     where: { isActive: true },
     select: { id: true, name: true, role: true },
@@ -61,7 +65,13 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
 
   const addMilestone = saveMilestone.bind(null, project.id);
   const removeMilestone = deleteMilestone.bind(null, project.id);
-  const charges = pricingLines(project);
+  const keepMilestone = saveMilestoneAsTemplate.bind(null, project.id);
+  const addSaved = addMilestoneFromTemplate.bind(null, project.id);
+  const templates = editable
+    ? await prisma.milestoneTemplate.findMany({ where: { isActive: true }, orderBy: { order: "asc" }, select: { id: true, title: true, tasks: true } })
+    : [];
+  const showPricing = canSee(session, "projects.pricing");
+  const charges = showPricing ? pricingLines(project) : [];
   const addChangeRequest = saveChangeRequest.bind(null, project.id);
 
   const scope = [
@@ -117,32 +127,34 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
             {done} of {project.tasks.length} tasks done
           </p>
         </div>
-        <div className="rounded-2xl border border-navy-900/10 bg-white p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Pricing</p>
-          {charges.length ? (
-            <ul className="mt-1 space-y-0.5 text-sm">
-              {charges.map((c) => (
-                <li key={c.key} className="flex justify-between gap-2">
-                  <span className="text-slate-500">{c.label}</span>
-                  <span className="font-medium text-navy-900">
-                    {formatMoney(c.total)} <span className="text-xs font-normal text-slate-500">{c.note}</span>
-                  </span>
+        {showPricing ? (
+          <div className="rounded-2xl border border-navy-900/10 bg-white p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Pricing</p>
+            {charges.length ? (
+              <ul className="mt-1 space-y-0.5 text-sm">
+                {charges.map((c) => (
+                  <li key={c.key} className="flex justify-between gap-2">
+                    <span className="text-slate-500">{c.label}</span>
+                    <span className="font-medium text-navy-900">
+                      {formatMoney(c.total)} <span className="text-xs font-normal text-slate-500">{c.note}</span>
+                    </span>
+                  </li>
+                ))}
+                <li className="text-xs text-slate-500">
+                  {project.gstMode === "NONE"
+                    ? "No GST"
+                    : `${project.gstMode === "INCLUSIVE" ? "Includes" : "Plus"} GST ${project.gstRate}%`}
                 </li>
-              ))}
-              <li className="text-xs text-slate-500">
-                {project.gstMode === "NONE"
-                  ? "No GST"
-                  : `${project.gstMode === "INCLUSIVE" ? "Includes" : "Plus"} GST ${project.gstRate}%`}
-              </li>
-            </ul>
-          ) : (
-            <p className="mt-1 font-medium text-navy-900">
-              {project.budget ? formatMoney(project.budget) : "—"}
-              {project.budget ? <span className="block text-xs font-normal text-slate-500">budget · set prices in Edit scope</span> : null}
-            </p>
-          )}
-          {project.endDate ? <p className="text-xs text-slate-500">due {formatDate(project.endDate)}</p> : null}
-        </div>
+              </ul>
+            ) : (
+              <p className="mt-1 font-medium text-navy-900">
+                {project.budget ? formatMoney(project.budget) : "—"}
+                {project.budget ? <span className="block text-xs font-normal text-slate-500">budget · set prices in Edit scope</span> : null}
+              </p>
+            )}
+            {project.endDate ? <p className="text-xs text-slate-500">due {formatDate(project.endDate)}</p> : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-6">
@@ -152,6 +164,7 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
             owners={assignees}
             save={addMilestone}
             remove={removeMilestone}
+            saveTemplate={editable ? keepMilestone : undefined}
             milestones={project.milestones.map((m) => ({
               id: m.id,
               title: m.title,
@@ -163,6 +176,38 @@ export default async function ClientProjectDetailPage({ params }: { params: Prom
               owner: m.owner?.name ?? null,
             }))}
           />
+
+          {editable && templates.length ? (
+            <form action={addSaved} className="mb-3 grid gap-3 rounded-xl border border-gold-400/40 bg-gold-50/40 p-4 sm:grid-cols-12">
+              <select name="templateId" required defaultValue="" aria-label="Saved milestone" className={`${inputClass} sm:col-span-6`}>
+                <option value="" disabled>
+                  Add a saved milestone…
+                </option>
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                    {Array.isArray(t.tasks) && t.tasks.length ? ` · ${t.tasks.length} tasks` : ""}
+                  </option>
+                ))}
+              </select>
+              <input name="dueDate" type="date" aria-label="Due date" className={`${inputClass} sm:col-span-2`} />
+              <select name="ownerId" defaultValue="" aria-label="Owner" className={`${inputClass} sm:col-span-2`}>
+                <option value="">Owner</option>
+                {assignees.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+              <PendingButton
+                icon={<BookMarked className="size-4" aria-hidden />}
+                pendingLabel="Adding…"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold-600 px-4 py-2.5 text-sm font-semibold text-navy-950 hover:bg-gold-500 sm:col-span-2"
+              >
+                Add
+              </PendingButton>
+            </form>
+          ) : null}
 
           {editable ? (
             <form action={addMilestone} className="grid gap-3 rounded-xl border border-navy-900/10 bg-slate-50 p-4 sm:grid-cols-12">

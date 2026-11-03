@@ -38,7 +38,7 @@ export default async function ActivityReportPage({ searchParams }: { searchParam
   for (let d = from; d.getTime() <= to.getTime(); d = addDays(d, 1)) if (!isSunday(d)) days.push(d);
   const cell = new Map(rows.map((r) => [`${r.userId}|${dayKey(r.date)}`, r]));
   const pending = rows.filter((r) => r.reviewStatus === "PENDING");
-  const editable = canEdit(session.role, "team");
+  const editable = canEdit(session, "team");
 
   const summary = users.map((u) => {
     const own = days.map((d) => cell.get(`${u.id}|${dayKey(d)}`));

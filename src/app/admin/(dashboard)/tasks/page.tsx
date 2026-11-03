@@ -20,7 +20,7 @@ export default async function TasksPage({
   if (end) end.setHours(23, 59, 59, 999);
 
   // Team members are always limited to their own work, whatever the filter says.
-  const forced = isOwnScoped(session.role, "tasks");
+  const forced = isOwnScoped(session, "tasks");
   const mine = forced || scope !== "all";
 
   const [tasks, projects] = await Promise.all([
@@ -129,7 +129,7 @@ export default async function TasksPage({
         />
       ) : (
         <TaskBoard
-          editable={canEdit(session.role, "tasks") || forced}
+          editable={canEdit(session, "tasks") || forced}
           showProject
           tasks={tasks.map((t) => ({
             id: t.id,

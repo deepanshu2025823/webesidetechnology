@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Building2, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
-import { canEdit } from "@/lib/permissions";
+import { canEdit, canSee } from "@/lib/permissions";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
 import { DataTools } from "@/components/admin/DataTools";
 import { formatDate } from "@/lib/utils";
@@ -18,6 +18,8 @@ export default async function ClientsPage({
   const { status, q, from, to } = await searchParams;
 
   const term = q?.trim();
+  // Without contact access, searching by a contact's email would reveal it.
+  const showContacts = canSee(session, "clients.contacts");
   const end = to ? new Date(to) : undefined;
   if (end) end.setHours(23, 59, 59, 999);
 
@@ -33,7 +35,9 @@ export default async function ClientsPage({
               { city: { contains: term } },
               { gstin: { contains: term } },
               { website: { contains: term } },
-              { contacts: { some: { OR: [{ name: { contains: term } }, { email: { contains: term } }] } } },
+              ...(showContacts
+                ? [{ contacts: { some: { OR: [{ name: { contains: term } }, { email: { contains: term } }] } } }]
+                : []),
             ],
           }
         : {}),
@@ -44,12 +48,12 @@ export default async function ClientsPage({
     orderBy: { createdAt: "desc" },
     include: {
       owner: { select: { name: true } },
-      contacts: { where: { isPrimary: true }, take: 1 },
+      contacts: { where: { isPrimary: true }, take: showContacts ? 1 : 0 },
       _count: { select: { projects: true, quotations: true } },
     },
   });
 
-  const editable = canEdit(session.role, "clients");
+  const editable = canEdit(session, "clients");
 
   return (
     <>
@@ -118,7 +122,9 @@ export default async function ClientsPage({
                       </Link>
                     </td>
                     <td className="px-5 py-3.5 text-slate-600">
-                      {client.contacts[0] ? (
+                      {!showContacts ? (
+                        <span className="text-xs text-slate-400">Hidden</span>
+                      ) : client.contacts[0] ? (
                         <>
                           <span className="block">{client.contacts[0].name}</span>
                           <span className="block text-xs text-slate-500">{client.contacts[0].email}</span>

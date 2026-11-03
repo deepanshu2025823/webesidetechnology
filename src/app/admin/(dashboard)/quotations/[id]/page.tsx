@@ -37,9 +37,9 @@ export default async function QuotationDetailPage({ params }: { params: Promise<
   });
   if (!quotation) notFound();
 
-  const editable = canEdit(session.role, "quotations");
-  const canMakeProject = canEdit(session.role, "projects") && quotation.projects.length === 0;
-  const canInvoice = canEdit(session.role, "finance") && quotation.invoices.length === 0;
+  const editable = canEdit(session, "quotations");
+  const canMakeProject = canEdit(session, "projects") && quotation.projects.length === 0;
+  const canInvoice = canEdit(session, "finance") && quotation.invoices.length === 0;
 
   const discount = Math.round(quotation.subtotal * (quotation.discountPct / 100));
   const taxable = quotation.subtotal - discount;

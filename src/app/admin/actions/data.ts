@@ -29,7 +29,7 @@ export async function importDataset(_prev: ImportState, form: FormData): Promise
   const dataset = getDataset(String(form.get("dataset") ?? ""));
   if (!dataset?.importer) return { error: "This module does not support importing." };
 
-  if (!canEdit(session.role, dataset.module)) {
+  if (!canEdit(session, dataset.module)) {
     return { error: "You do not have permission to import into this module." };
   }
 

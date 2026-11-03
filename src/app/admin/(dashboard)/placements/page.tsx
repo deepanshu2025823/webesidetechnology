@@ -156,7 +156,7 @@ export default async function PlacementsPage({ searchParams }: { searchParams: P
         </form>
       </div>
 
-      <PlacementBoard candidates={rows} partners={partners} editable={canEdit(session.role, "placements")} />
+      <PlacementBoard candidates={rows} partners={partners} editable={canEdit(session, "placements")} />
     </>
   );
 }

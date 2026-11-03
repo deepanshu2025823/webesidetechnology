@@ -32,7 +32,7 @@ export default async function PartnersPage() {
     }),
   ]);
 
-  const editable = canEdit(session.role, "partners");
+  const editable = canEdit(session, "partners");
   const payable = pendingRewards.reduce((sum, r) => sum + r.amount, 0);
 
   return (

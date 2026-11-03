@@ -37,7 +37,7 @@ export default async function SeoPlanPage({ params }: { params: Promise<{ id: st
     orderBy: { name: "asc" },
   });
 
-  const editable = canEdit(session.role, "campaigns");
+  const editable = canEdit(session, "campaigns");
   const top3 = plan.keywords.filter((k) => k.currentPosition !== null && k.currentPosition <= 3).length;
   const top10 = plan.keywords.filter((k) => k.currentPosition !== null && k.currentPosition <= 10).length;
 

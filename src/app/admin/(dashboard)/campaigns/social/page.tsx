@@ -22,7 +22,7 @@ export default async function SocialPlansPage() {
     prisma.clientProject.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 
-  const editable = canEdit(session.role, "campaigns");
+  const editable = canEdit(session, "campaigns");
 
   return (
     <>

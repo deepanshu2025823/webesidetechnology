@@ -40,7 +40,7 @@ export default async function PayrollPage({
     }),
   ]);
 
-  const editable = canEdit(session.role, "payroll");
+  const editable = canEdit(session, "payroll");
   const totalNet = payslips.reduce((sum, p) => sum + p.netPay, 0);
   const paid = payslips.filter((p) => p.status === "PAID").length;
 

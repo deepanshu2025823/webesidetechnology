@@ -8,6 +8,7 @@ import {
   BadgeCheck,
   BadgeIndianRupee,
   BarChart3,
+  BookMarked,
   Bot,
   Briefcase,
   Building2,
@@ -47,6 +48,7 @@ import {
   ScrollText,
   Search,
   Settings,
+  ShieldCheck,
   Sparkles,
   Star,
   Tags,
@@ -61,7 +63,7 @@ import {
   X,
 } from "lucide-react";
 import { logoutAction } from "@/app/admin/actions/auth";
-import { canView, ROLE_LABELS, type ModuleKey } from "@/lib/permissions";
+import { ROLE_LABELS, type ModuleKey } from "@/lib/permissions";
 import type { Role } from "@/generated/prisma/enums";
 import { cn } from "@/lib/utils";
 
@@ -78,6 +80,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/admin/clients", label: "Clients", icon: Building2, module: "clients" },
       { href: "/admin/quotations", label: "Quotations", icon: FileSignature, module: "quotations" },
       { href: "/admin/client-projects", label: "Projects", icon: Briefcase, module: "projects" },
+      { href: "/admin/milestone-templates", label: "Saved milestones", icon: BookMarked, module: "projects" },
       { href: "/admin/tasks", label: "Tasks", icon: ListChecks, module: "tasks" },
     ],
   },
@@ -174,16 +177,25 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/admin/integrations", label: "Integrations", icon: Plug, module: "integrations" },
       { href: "/admin/settings", label: "Settings & SEO", icon: Settings, module: "settings" },
       { href: "/admin/users", label: "Team access", icon: UserCog, module: "users" },
+      { href: "/admin/users/permissions", label: "Permissions", icon: ShieldCheck, module: "users" },
     ],
   },
 ];
 
-export function Sidebar({ user }: { user: { name: string; email: string; role: Role } }) {
+export function Sidebar({
+  user,
+  modules,
+}: {
+  user: { name: string; email: string; role: Role };
+  /** Modules this person can open, worked out on the server with their overrides. */
+  modules: ModuleKey[];
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  // Only render what this role is allowed to reach.
-  const groups = GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => canView(user.role, i.module)) })).filter(
+  // Only render what this person is allowed to reach.
+  const allowed = new Set(modules);
+  const groups = GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => allowed.has(i.module)) })).filter(
     (g) => g.items.length,
   );
 

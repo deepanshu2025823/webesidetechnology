@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@/generated/prisma/enums";
 import { can, canView, isOwnScoped, type Access, type ModuleKey } from "@/lib/permissions";
+import { ensurePermissions } from "@/lib/permission-store";
 
 const COOKIE = "sahab_admin";
 const MAX_AGE = 60 * 60 * 8; // 8 hours
@@ -60,6 +61,9 @@ export async function getSession(): Promise<SessionUser | null> {
 
   try {
     const { payload } = await jwtVerify(token, secret());
+    // Every guard and action reads the session first, so this is where the
+    // saved permission overrides are brought up to date for the checks after it.
+    await ensurePermissions();
     return {
       id: String(payload.id),
       name: String(payload.name),
@@ -90,21 +94,21 @@ export async function requireRole(...roles: Role[]): Promise<SessionUser> {
  */
 export async function requirePermission(module: ModuleKey, level: Access = "read"): Promise<SessionUser> {
   const session = await requireSession();
-  if (!can(session.role, module, level)) throw new Error("FORBIDDEN");
+  if (!can(session, module, level)) throw new Error("FORBIDDEN");
   return session;
 }
 
 /** Page guard that also allows roles limited to their own records. */
 export async function requireModule(module: ModuleKey): Promise<SessionUser> {
   const session = await requireSession();
-  if (!canView(session.role, module)) throw new Error("FORBIDDEN");
+  if (!canView(session, module)) throw new Error("FORBIDDEN");
   return session;
 }
 
 /** True when this user should only see records assigned to them. */
 export async function scopedToOwn(module: ModuleKey): Promise<boolean> {
   const session = await requireSession();
-  return isOwnScoped(session.role, module);
+  return isOwnScoped(session, module);
 }
 
 export async function authenticate(email: string, password: string) {

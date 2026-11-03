@@ -32,7 +32,7 @@ export default async function AdminPortalPage() {
     prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
   ]);
 
-  const editable = canEdit(session.role, "portal");
+  const editable = canEdit(session, "portal");
   const pendingApprovals = approvals.filter((a) => a.status === "PENDING").length;
   const openTickets = tickets.filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS").length;
 

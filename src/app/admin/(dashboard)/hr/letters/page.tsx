@@ -58,7 +58,7 @@ export default async function LettersPage() {
         rows={rows}
         employees={employees}
         candidates={candidates}
-        editable={canEdit(session.role, "team")}
+        editable={canEdit(session, "team")}
       />
     </>
   );

@@ -52,7 +52,7 @@ export default async function InvoicesPage({
     include: { client: { select: { id: true, name: true } } },
   });
 
-  const editable = canEdit(session.role, "finance");
+  const editable = canEdit(session, "finance");
   const total = invoices.reduce((sum, i) => sum + i.total, 0);
   const due = invoices.reduce((sum, i) => sum + (i.total - i.amountPaid), 0);
 

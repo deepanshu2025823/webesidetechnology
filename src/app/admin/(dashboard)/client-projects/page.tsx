@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { assignedTo } from "@/lib/project-access";
 import { requireModule } from "@/lib/auth";
-import { canEdit, isOwnScoped } from "@/lib/permissions";
+import { canEdit, canSee, isOwnScoped } from "@/lib/permissions";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
 import { DataTools } from "@/components/admin/DataTools";
 import { cn, formatDate, formatMoney } from "@/lib/utils";
@@ -23,7 +24,7 @@ export default async function ClientProjectsPage({
   if (end) end.setHours(23, 59, 59, 999);
 
   // Team members only see projects they are actually on.
-  const ownOnly = isOwnScoped(session.role, "projects");
+  const ownOnly = isOwnScoped(session, "projects");
 
   const projects = await prisma.clientProject.findMany({
     where: {
@@ -40,15 +41,9 @@ export default async function ClientProjectsPage({
       ...(from || end
         ? { createdAt: { ...(from ? { gte: new Date(from) } : {}), ...(end ? { lte: end } : {}) } }
         : {}),
-      ...(ownOnly
-        ? {
-            OR: [
-              { managerId: session.id },
-              { members: { some: { userId: session.id } } },
-              { tasks: { some: { assigneeId: session.id } } },
-            ],
-          }
-        : {}),
+      // AND, not a second OR: spread beside the search's OR it would replace it,
+      // and a restricted user's search would quietly match everything they own.
+      ...(ownOnly ? { AND: [assignedTo(session.id)] } : {}),
     },
     orderBy: [{ stage: "asc" }, { endDate: "asc" }],
     include: {
@@ -58,7 +53,7 @@ export default async function ClientProjectsPage({
     },
   });
 
-  const editable = canEdit(session.role, "projects");
+  const editable = canEdit(session, "projects");
 
   /** Stage links keep whatever search and dates are already applied. */
   const stageHref = (next: string) => {
@@ -149,7 +144,7 @@ export default async function ClientProjectsPage({
                     <span>
                       {p._count.tasks} task{p._count.tasks === 1 ? "" : "s"}
                     </span>
-                    {p.budget ? <span>{formatMoney(p.budget)}</span> : null}
+                    {p.budget && canSee(session, "projects.pricing") ? <span>{formatMoney(p.budget)}</span> : null}
                   </div>
 
                   <div className="mt-3 flex items-center justify-between border-t border-navy-900/5 pt-3 text-xs">

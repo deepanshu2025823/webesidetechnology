@@ -39,7 +39,7 @@ export default async function AttendancePage({
   ]);
 
   const byEmployee = new Map(records.map((r) => [r.employeeId, r]));
-  const editable = canEdit(session.role, "team");
+  const editable = canEdit(session, "team");
   const present = records.filter((r) => r.status === "PRESENT").length;
 
   return (

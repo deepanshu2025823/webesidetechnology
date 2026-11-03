@@ -34,7 +34,7 @@ export default async function LeavePage({
     prisma.employee.findMany({ where: { isActive: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
 
-  const editable = canEdit(session.role, "team");
+  const editable = canEdit(session, "team");
   const pending = requests.filter((r) => r.status === "REQUESTED").length;
 
   return (

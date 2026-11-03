@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CircleDot, Flame, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
-import { canEdit } from "@/lib/permissions";
+import { canEdit, canSee } from "@/lib/permissions";
 import { Badge, EmptyState, PageHeader } from "@/components/admin/ui";
 import { DataTools } from "@/components/admin/DataTools";
 import { BulkCheckbox, BulkSelect, BulkSelectAll, type BulkAction } from "@/components/admin/BulkSelect";
@@ -27,13 +27,14 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const { status, owner, q, from, to } = await searchParams;
 
   const term = q?.trim();
+  const showContact = canSee(session, "leads.contact");
   // Matched against every field a colleague would think to search by.
   const textWhere = term
     ? {
         OR: [
           { name: { contains: term } },
-          { email: { contains: term } },
-          { phone: { contains: term } },
+          // Searching by email or phone would reveal them to someone who cannot see them.
+          ...(showContact ? [{ email: { contains: term } }, { phone: { contains: term } }] : []),
           { company: { contains: term } },
           { serviceInterest: { contains: term } },
           { message: { contains: term } },
@@ -61,7 +62,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
   ]);
 
-  const mayBulk = canEdit(session.role, "leads");
+  const mayBulk = canEdit(session, "leads");
   const bulkActions: BulkAction[] = [
     ...STAGES.map((st) => ({ value: `status:${st}`, label: st.charAt(0) + st.slice(1).toLowerCase(), group: "Move to stage…" })),
     { value: "owner:none", label: "Unassigned", group: "Assign to…" },
@@ -90,7 +91,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         title="Leads"
         description="Every enquiry from the website plus anything added by the team, tracked through the pipeline."
         actions={
-          canEdit(session.role, "leads") ? (
+          canEdit(session, "leads") ? (
             <Link
               href="/admin/leads/new"
               className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-800"
@@ -166,7 +167,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               : "Website enquiries land here automatically — or add one by hand."
           }
           action={
-            canEdit(session.role, "leads") && !term ? (
+            canEdit(session, "leads") && !term ? (
               <Link href="/admin/leads/new" className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white">
                 Add a lead
               </Link>
@@ -211,7 +212,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                               {!lead.isRead ? <Badge tone="warn">New</Badge> : null}
                               {lead.score >= 70 ? <Flame className="size-3.5 text-gold-600" aria-label="Hot lead" /> : null}
                             </span>
-                            <span className="block text-xs text-slate-500">{lead.company || lead.email}</span>
+                            <span className="block text-xs text-slate-500">{lead.company || (showContact ? lead.email : "")}</span>
                           </Link>
                         </td>
                         <td className="px-5 py-3.5 text-slate-600">

@@ -27,7 +27,7 @@ export default async function ChatDetailPage({ params }: { params: Promise<{ id:
   // Opening the thread is what clears the badge for everyone else.
   if (chat.unreadForAgent) await markChatRead(id);
 
-  const editable = canEdit(session.role, "chats");
+  const editable = canEdit(session, "chats");
   const closed = chat.status === "CLOSED" || Boolean(chat.closedAt);
 
   const reply = replyToChat.bind(null, id);

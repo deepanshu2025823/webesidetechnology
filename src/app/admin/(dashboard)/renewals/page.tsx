@@ -100,12 +100,12 @@ export default async function RenewalsPage({
         ))}
       </nav>
 
-      {renewals.length === 0 && !canEdit(session.role, "renewals") ? (
+      {renewals.length === 0 && !canEdit(session, "renewals") ? (
         <EmptyState title="No renewals tracked" description="Domains, hosting, AMCs and retainers appear here." />
       ) : (
         <RenewalManager
-          editable={canEdit(session.role, "renewals")}
-          canInvoice={canEdit(session.role, "finance")}
+          editable={canEdit(session, "renewals")}
+          canInvoice={canEdit(session, "finance")}
           clients={clients}
           projects={projects}
           owners={owners}

@@ -60,7 +60,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   });
   if (!invoice) notFound();
 
-  const editable = canEdit(session.role, "finance");
+  const editable = canEdit(session, "finance");
   const credited = invoice.creditNotes.reduce((sum, c) => sum + c.amount, 0);
   const balance = invoice.total - credited - invoice.amountPaid;
 

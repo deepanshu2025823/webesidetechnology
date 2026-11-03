@@ -5,8 +5,13 @@ import type { Role } from "@/generated/prisma/enums";
  *
  * The roles mirror section 3 of the project scope document. Every module the
  * panel exposes is listed here once; the sidebar, the page guards and the
- * server actions all read from this single matrix, so granting a team member
- * access is a one-line change rather than a hunt through the codebase.
+ * server actions all read from this single matrix.
+ *
+ * The matrix below is only the starting point. A Super Admin can override any
+ * cell for a whole role, or for one person, from Team access → Permissions;
+ * those overrides live in the database and are applied here by
+ * `applyOverrides`. A person's own override beats their role's, which beats
+ * the default.
  */
 
 export type ModuleKey =
@@ -33,6 +38,34 @@ export type ModuleKey =
   | "website"
   | "settings"
   | "users";
+
+/**
+ * Sensitive fields that can be shown or hidden independently of the module
+ * they sit in — a team lead can work a client's project without seeing the
+ * client's phone number.
+ */
+export type FieldKey = "clients.contacts" | "clients.billing" | "leads.contact" | "projects.pricing";
+
+export const FIELD_LABELS: Record<FieldKey, { label: string; detail: string }> = {
+  "clients.contacts": { label: "Client contact details", detail: "Contact names, emails and phone numbers on clients." },
+  "clients.billing": { label: "Client billing details", detail: "GSTIN, PAN and address on clients." },
+  "leads.contact": { label: "Lead contact details", detail: "Email and phone of leads and enquiries." },
+  "projects.pricing": { label: "Project pricing", detail: "Project, subscription and maintenance cost, GST and budget." },
+};
+
+/** Who sees each sensitive field before any override. */
+const FIELD_DEFAULTS: Record<FieldKey, Role[]> = {
+  "clients.contacts": ["SUPER_ADMIN", "DIRECTOR", "SALES", "PROJECT_MANAGER", "FINANCE"],
+  "clients.billing": ["SUPER_ADMIN", "DIRECTOR", "SALES", "PROJECT_MANAGER", "FINANCE"],
+  "leads.contact": ["SUPER_ADMIN", "DIRECTOR", "SALES", "PROJECT_MANAGER"],
+  "projects.pricing": ["SUPER_ADMIN", "DIRECTOR", "SALES", "PROJECT_MANAGER", "FINANCE"],
+};
+
+/**
+ * Anyone a check is made for: a bare role (role defaults and role overrides
+ * only), or a signed-in person, whose own overrides then apply as well.
+ */
+export type Subject = Role | { id?: string | null; role: Role };
 
 /** "own" limits a user to records assigned to them. */
 export type Access = "none" | "own" | "read" | "write";
@@ -102,7 +135,7 @@ export const PERMISSIONS: Record<Role, Record<ModuleKey, Access>> = {
     integrations: N, website: N, settings: N, users: N,
   },
   TEAM_LEAD: {
-    dashboard: R, leads: N, chats: N, clients: R, quotations: N, projects: R, tasks: W,
+    dashboard: R, leads: N, chats: N, clients: R, quotations: N, projects: O, tasks: W,
     finance: N, renewals: N, campaigns: W, events: R, team: R, payroll: N, placements: N,
     influencers: N, partners: N, reports: R, documents: R, portal: N,
     integrations: N, website: N, settings: N, users: N,
@@ -166,25 +199,73 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   users: "Team access",
 };
 
-export function accessTo(role: Role, module: ModuleKey): Access {
+// ---------------------------------------------------------------- overrides
+
+/** Keys are `ROLE|key` and `userId|key`; field keys are stored as `field:<key>`. */
+export type Overrides = { role: Map<string, Access>; user: Map<string, Access> };
+
+let overrides: Overrides | null = null;
+
+/** Installed on the server by the permission store; the browser never has them. */
+export function applyOverrides(next: Overrides) {
+  overrides = next;
+}
+
+function parts(subject: Subject) {
+  return typeof subject === "string" ? { role: subject, id: null } : { role: subject.role, id: subject.id ?? null };
+}
+
+/**
+ * A Super Admin always keeps Team access and Settings, whatever is saved, so
+ * the panel can never be locked out of its own permission screen.
+ */
+function locked(role: Role, key: string) {
+  return role === "SUPER_ADMIN" && (key === "users" || key === "settings");
+}
+
+function resolve(subject: Subject, key: string, fallback: Access): Access {
+  const { role, id } = parts(subject);
+  if (locked(role, key) || !overrides) return fallback;
+  return (id && overrides.user.get(`${id}|${key}`)) || overrides.role.get(`${role}|${key}`) || fallback;
+}
+
+/** The code default, before any override. */
+export function defaultAccess(role: Role, module: ModuleKey): Access {
   return PERMISSIONS[role]?.[module] ?? "none";
 }
 
-/** True when the role reaches `module` at least at `level`. */
-export function can(role: Role, module: ModuleKey, level: Access = "read"): boolean {
-  return ORDER[accessTo(role, module)] >= ORDER[level];
+export function defaultFieldVisible(role: Role, field: FieldKey) {
+  return FIELD_DEFAULTS[field].includes(role);
 }
 
-/** True when the role may open the module at all, even if only its own records. */
-export function canView(role: Role, module: ModuleKey): boolean {
-  return accessTo(role, module) !== "none";
+export function accessTo(subject: Subject, module: ModuleKey): Access {
+  return resolve(subject, module, defaultAccess(parts(subject).role, module));
 }
 
-/** True when the role only sees records assigned to them. */
-export function isOwnScoped(role: Role, module: ModuleKey): boolean {
-  return accessTo(role, module) === "own";
+/** True when the subject reaches `module` at least at `level`. */
+export function can(subject: Subject, module: ModuleKey, level: Access = "read"): boolean {
+  return ORDER[accessTo(subject, module)] >= ORDER[level];
 }
 
-export function canEdit(role: Role, module: ModuleKey): boolean {
-  return accessTo(role, module) === "write";
+/** True when the subject may open the module at all, even if only its own records. */
+export function canView(subject: Subject, module: ModuleKey): boolean {
+  return accessTo(subject, module) !== "none";
 }
+
+/** True when the subject only sees records assigned to them. */
+export function isOwnScoped(subject: Subject, module: ModuleKey): boolean {
+  return accessTo(subject, module) === "own";
+}
+
+export function canEdit(subject: Subject, module: ModuleKey): boolean {
+  return accessTo(subject, module) === "write";
+}
+
+/** Whether a sensitive field is shown. Stored as read (shown) or none (hidden). */
+export function canSee(subject: Subject, field: FieldKey): boolean {
+  const fallback: Access = defaultFieldVisible(parts(subject).role, field) ? "read" : "none";
+  return resolve(subject, `field:${field}`, fallback) !== "none";
+}
+
+export const MODULE_KEYS = Object.keys(MODULE_LABELS) as ModuleKey[];
+export const FIELD_KEYS = Object.keys(FIELD_LABELS) as FieldKey[];

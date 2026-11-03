@@ -26,7 +26,7 @@ export default async function EventsPage() {
     prisma.user.findMany({ where: { isActive: true }, select: { id: true, name: true, role: true }, orderBy: { name: "asc" } }),
   ]);
 
-  const editable = canEdit(session.role, "events");
+  const editable = canEdit(session, "events");
 
   return (
     <>

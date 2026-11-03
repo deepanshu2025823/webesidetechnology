@@ -52,7 +52,7 @@ export default async function CollectionPage({ params }: Params) {
       collection={collection}
       rows={JSON.parse(JSON.stringify(rows))}
       dynamicOptions={dynamicOptions}
-      readOnly={!canEdit(session.role, (collection.module ?? "website") as ModuleKey)}
+      readOnly={!canEdit(session, (collection.module ?? "website") as ModuleKey)}
       tools={
         dataset ? (
           // The manager already searches the loaded rows, so only the file

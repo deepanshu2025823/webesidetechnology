@@ -21,7 +21,7 @@ export default async function IntegrationsPage() {
   ]);
 
   const byProvider = new Map(settings.map((s) => [s.provider, s]));
-  const editable = canEdit(session.role, "integrations");
+  const editable = canEdit(session, "integrations");
   const smtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER);
 
   return (

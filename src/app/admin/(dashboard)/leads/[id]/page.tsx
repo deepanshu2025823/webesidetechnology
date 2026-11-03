@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Building2, Globe, Mail, Phone, UserPlus, Wallet } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
-import { canEdit } from "@/lib/permissions";
+import { canEdit, canSee } from "@/lib/permissions";
 import { addLeadActivity, convertLeadToClient, updateLead } from "@/app/admin/actions/crm";
 import { deleteEnquiry } from "@/app/admin/actions/content";
 import { Badge, Card, PageHeader, inputClass } from "@/components/admin/ui";
@@ -34,17 +34,20 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     orderBy: { name: "asc" },
   });
 
-  const editable = canEdit(session.role, "leads");
-  const canConvert = canEdit(session.role, "clients") && !lead.clientId;
+  const editable = canEdit(session, "leads");
+  const canConvert = canEdit(session, "clients") && !lead.clientId;
 
   const save = updateLead.bind(null, id);
   const log = addLeadActivity.bind(null, id);
   const convert = convertLeadToClient.bind(null, id);
   const remove = deleteEnquiry.bind(null, id);
 
+  const showContact = canSee(session, "leads.contact");
   const facts = [
-    { icon: Mail, label: "Email", value: lead.email, href: `mailto:${lead.email}` },
-    lead.phone && { icon: Phone, label: "Phone", value: lead.phone, href: `tel:${lead.phone}` },
+    showContact
+      ? { icon: Mail, label: "Email", value: lead.email, href: `mailto:${lead.email}` }
+      : { icon: Mail, label: "Contact", value: "Hidden for your account" },
+    showContact && lead.phone && { icon: Phone, label: "Phone", value: lead.phone, href: `tel:${lead.phone}` },
     lead.company && { icon: Building2, label: "Company", value: lead.company },
     lead.budget && { icon: Wallet, label: "Budget", value: lead.budget },
     lead.pageUrl && { icon: Globe, label: "Came from", value: `${lead.source} · ${lead.pageUrl}` },

@@ -44,7 +44,7 @@ export default async function AdCampaignsPage() {
 
   const totalSpend = rows.reduce((sum, r) => sum + r.spend, 0);
   const totalLeads = rows.reduce((sum, r) => sum + r.leads, 0);
-  const editable = canEdit(session.role, "campaigns");
+  const editable = canEdit(session, "campaigns");
 
   return (
     <>

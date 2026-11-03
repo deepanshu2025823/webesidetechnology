@@ -27,8 +27,8 @@ export default async function DashboardPage({
   const endOfToday = new Date();
   endOfToday.setHours(23, 59, 59, 999);
 
-  const sees = (m: Parameters<typeof canView>[1]) => canView(session.role, m);
-  const ownOnly = isOwnScoped(session.role, "tasks");
+  const sees = (m: Parameters<typeof canView>[1]) => canView(session, m);
+  const ownOnly = isOwnScoped(session, "tasks");
 
   const [
     newLeads,

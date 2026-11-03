@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getSession } from "@/lib/auth";
-import { canView } from "@/lib/permissions";
+import { canSee, canView } from "@/lib/permissions";
 import { getDataset, readFilters, humanise } from "@/lib/admin/datasets";
 import { getSettings } from "@/lib/queries";
 import { formatDate } from "@/lib/utils";
@@ -30,14 +30,14 @@ export default async function DatasetReportPage({
   if (!dataset) notFound();
 
   const session = await getSession();
-  if (!session || !canView(session.role, dataset.module)) throw new Error("FORBIDDEN");
+  if (!session || !canView(session, dataset.module)) throw new Error("FORBIDDEN");
 
   const query = await searchParams;
   const flat: Record<string, string | undefined> = {};
   for (const [k, v] of Object.entries(query)) flat[k] = Array.isArray(v) ? v[0] : v;
 
   const [{ headers, rows, stats }, settings] = await Promise.all([
-    dataset.fetch(readFilters(flat)),
+    dataset.fetch(readFilters(flat), (field) => canSee(session, field)),
     getSettings(),
   ]);
 

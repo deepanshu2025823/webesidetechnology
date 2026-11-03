@@ -30,7 +30,7 @@ export async function DataTools({
   if (!dataset) return null;
 
   const session = await getSession();
-  const mayImport = Boolean(session && dataset.importer && canEdit(session.role, dataset.module));
+  const mayImport = Boolean(session && dataset.importer && canEdit(session, dataset.module));
 
   return (
     <DataToolbar

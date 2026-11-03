@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import { BookmarkPlus, Check, Pencil, Trash2, X } from "lucide-react";
 import { Badge, inputClass } from "@/components/admin/ui";
 import { PendingButton } from "@/components/admin/PendingButton";
 import { formatDate } from "@/lib/utils";
@@ -28,12 +28,15 @@ export function MilestoneList({
   editable,
   save,
   remove,
+  saveTemplate,
 }: {
   milestones: MilestoneItem[];
   owners: { id: string; name: string }[];
   editable: boolean;
   save: (form: FormData) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  /** Saves the milestone and its tasks to the reusable library. */
+  saveTemplate?: (id: string) => Promise<void>;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
 
@@ -121,6 +124,17 @@ export function MilestoneList({
                 >
                   <Pencil className="size-3.5" />
                 </button>
+                {saveTemplate ? (
+                  <form action={() => saveTemplate(m.id)}>
+                    <PendingButton
+                      className="rounded-lg p-1.5 text-slate-400 hover:bg-gold-50 hover:text-gold-700"
+                      aria-label={`Save ${m.title} for reuse`}
+                      title="Save for reuse, with its tasks"
+                    >
+                      <BookmarkPlus className="size-3.5" />
+                    </PendingButton>
+                  </form>
+                ) : null}
                 <form action={() => remove(m.id)}>
                   <PendingButton className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label={`Delete ${m.title}`}>
                     <Trash2 className="size-3.5" />

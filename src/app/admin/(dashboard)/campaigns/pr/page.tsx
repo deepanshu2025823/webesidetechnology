@@ -25,7 +25,7 @@ export default async function PrPage() {
     prisma.mediaContact.findMany({ orderBy: { name: "asc" } }),
   ]);
 
-  const editable = canEdit(session.role, "campaigns");
+  const editable = canEdit(session, "campaigns");
   const placements = activities.reduce((sum, a) => sum + a.pitches.filter((p) => p.publishedUrl).length, 0);
 
   return (

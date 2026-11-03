@@ -123,7 +123,7 @@ export default async function MoneyRegisterPage({ searchParams }: { searchParams
       <DataTools dataset="expenses" />
 
       <MoneyRegister
-        editable={canEdit(session.role, "finance")}
+        editable={canEdit(session, "finance")}
         clients={clients}
         projects={projects}
         services={services}

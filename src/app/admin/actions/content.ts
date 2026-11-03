@@ -491,7 +491,7 @@ export type BulkProjectAction = "publish" | "draft" | "archive" | "feature" | "u
 /** One action over the rows ticked in the portfolio list. */
 export async function bulkProjects(ids: string[], action: string): Promise<{ error?: string; message?: string }> {
   const session = await requireSession();
-  if (!canEdit(session.role, "website")) return { error: "You do not have permission to change the portfolio." };
+  if (!canEdit(session, "website")) return { error: "You do not have permission to change the portfolio." };
 
   const targets = ids.filter((id) => typeof id === "string" && id).slice(0, 500);
   if (!targets.length) return { error: "Select at least one case study." };

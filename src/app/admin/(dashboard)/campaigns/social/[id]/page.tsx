@@ -35,7 +35,7 @@ export default async function ContentPlanPage({ params }: { params: Promise<{ id
     orderBy: { name: "asc" },
   });
 
-  const editable = canEdit(session.role, "campaigns");
+  const editable = canEdit(session, "campaigns");
   const published = plan.items.filter((i) => i.stage === "PUBLISHED").length;
   const missed = plan.contractedCount ? Math.max(0, plan.contractedCount - plan.items.length) : 0;
   const report = saveSocialReport.bind(null, plan.id);

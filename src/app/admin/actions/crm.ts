@@ -767,3 +767,64 @@ export async function bulkLeads(ids: string[], action: string): Promise<{ error?
   revalidatePath("/admin/leads");
   return { message: `${n} updated.` };
 }
+
+// ------------------------------------------------------- milestone library
+
+/** Adds a saved milestone to a project, with the tasks it comes with. */
+export async function addMilestoneFromTemplate(projectId: string, form: FormData): Promise<void> {
+  const session = await requirePermission("projects", "write");
+  const template = await prisma.milestoneTemplate.findUnique({ where: { id: str(form, "templateId") } });
+  if (!template) return;
+
+  const milestone = await prisma.milestone.create({
+    data: {
+      projectId,
+      title: template.title,
+      description: template.description || null,
+      dueDate: date(form, "dueDate"),
+      ownerId: nullable(form, "ownerId"),
+      order: await prisma.milestone.count({ where: { projectId } }),
+    },
+  });
+
+  const titles = (Array.isArray(template.tasks) ? (template.tasks as unknown[]) : []).map(String).filter(Boolean);
+  if (titles.length) {
+    const start = await prisma.task.count({ where: { projectId } });
+    await prisma.task.createMany({
+      data: titles.map((title, i) => ({
+        projectId,
+        milestoneId: milestone.id,
+        title: title.slice(0, 240),
+        reporterId: session.id,
+        order: start + i,
+      })),
+    });
+  }
+
+  await logActivity(session.id, "create", "Milestone", milestone.id, `${template.title} (from saved, ${titles.length} tasks)`);
+  revalidatePath(`/admin/client-projects/${projectId}`);
+}
+
+/** Saves a project's milestone, and the titles of its tasks, to the library. */
+export async function saveMilestoneAsTemplate(projectId: string, milestoneId: string): Promise<void> {
+  const session = await requirePermission("projects", "write");
+  const milestone = await prisma.milestone.findFirst({
+    where: { id: milestoneId, projectId },
+    include: { tasks: { orderBy: [{ order: "asc" }, { createdAt: "asc" }], select: { title: true } } },
+  });
+  if (!milestone) return;
+
+  // Saving the same milestone twice refreshes its task list instead of piling up copies.
+  const existing = await prisma.milestoneTemplate.findFirst({ where: { title: milestone.title } });
+  const data = {
+    title: milestone.title,
+    description: milestone.description ?? "",
+    tasks: [...new Set(milestone.tasks.map((t) => t.title))],
+  };
+  if (existing) await prisma.milestoneTemplate.update({ where: { id: existing.id }, data });
+  else await prisma.milestoneTemplate.create({ data: { ...data, order: await prisma.milestoneTemplate.count() } });
+
+  await logActivity(session.id, "create", "MilestoneTemplate", undefined, `Saved “${milestone.title}” for reuse`);
+  revalidatePath(`/admin/client-projects/${projectId}`);
+  revalidatePath("/admin/milestone-templates");
+}

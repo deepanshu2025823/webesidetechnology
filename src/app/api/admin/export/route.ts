@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { canView } from "@/lib/permissions";
+import { canSee, canView } from "@/lib/permissions";
 import { getDataset, readFilters } from "@/lib/admin/datasets";
 import { toCsv } from "@/lib/admin/csv";
 
@@ -19,11 +19,11 @@ export async function GET(request: Request) {
   const dataset = getDataset(url.searchParams.get("dataset") ?? "");
   if (!dataset) return NextResponse.json({ error: "Unknown dataset" }, { status: 404 });
 
-  if (!canView(session.role, dataset.module)) {
+  if (!canView(session, dataset.module)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { headers, rows } = await dataset.fetch(readFilters(url.searchParams));
+  const { headers, rows } = await dataset.fetch(readFilters(url.searchParams), (field) => canSee(session, field));
   const stamp = new Date().toISOString().slice(0, 10);
 
   return new NextResponse(toCsv(headers, rows), {

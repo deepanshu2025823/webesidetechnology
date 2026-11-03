@@ -23,7 +23,7 @@ export default async function DocumentsPage() {
     prisma.service.findMany({ select: { id: true, title: true }, orderBy: { order: "asc" } }),
   ]);
 
-  const editable = canEdit(session.role, "documents");
+  const editable = canEdit(session, "documents");
 
   return (
     <>

@@ -223,6 +223,26 @@ export const COLLECTIONS: Record<string, Collection> = {
     ],
   },
 
+  "milestone-templates": {
+    model: "milestoneTemplate",
+    slug: "milestone-templates",
+    module: "projects",
+    title: "Saved milestones",
+    singular: "Saved milestone",
+    description:
+      "Milestones you reuse across projects, each with the tasks it usually needs. Add one to a project from its Milestones card, or save a project's milestone here with “Save for reuse”.",
+    titleField: "title",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "title", label: "Milestone", type: "text", required: true, inList: true, placeholder: "Meta business verification" },
+      { name: "description", label: "Details", type: "textarea", colSpan: 2 },
+      { name: "tasks", label: "Tasks it comes with", type: "taglist", colSpan: 2, help: "One task per entry. Each becomes a task on the project when the milestone is added." },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
   "home-sections": {
     model: "homeSection",
     slug: "home-sections",

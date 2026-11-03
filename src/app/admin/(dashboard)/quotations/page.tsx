@@ -53,7 +53,7 @@ export default async function QuotationsPage({
   const pipelineValue = quotations
     .filter((q) => ["SENT", "NEGOTIATION"].includes(q.status))
     .reduce((sum, q) => sum + q.total, 0);
-  const editable = canEdit(session.role, "quotations");
+  const editable = canEdit(session, "quotations");
 
   /** Stage links keep whatever search and dates are already applied. */
   const stageHref = (next: string) => {

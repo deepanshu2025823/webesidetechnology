@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireSession, logActivity } from "@/lib/auth";
+import { canEdit, type ModuleKey } from "@/lib/permissions";
 import { getCollection, type Collection, type Field } from "@/lib/admin/collections";
 import { slugify } from "@/lib/utils";
 
@@ -17,6 +18,18 @@ export type ActionState = { ok?: boolean; error?: string; message?: string };
 function refreshSite() {
   revalidatePath("/(site)", "layout");
   revalidatePath("/sitemap.xml");
+}
+
+/**
+ * Every write checks the collection's own module. Being signed in is not
+ * enough: an editor of the website must not be able to rewrite, say, the
+ * milestone library by posting to this action directly.
+ */
+async function writer(slug: string) {
+  const session = await requireSession();
+  const collection = getCollection(slug);
+  if (collection && !canEdit(session, (collection.module ?? "website") as ModuleKey)) throw new Error("FORBIDDEN");
+  return { session, collection };
 }
 
 /** Prisma models are addressed by name here; the whitelist is the collection map. */
@@ -84,8 +97,7 @@ export async function saveCollectionItem(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await requireSession();
-  const collection = getCollection(slug);
+  const { session, collection } = await writer(slug);
   if (!collection) return { error: "Unknown section" };
 
   const id = String(formData.get("id") ?? "");
@@ -119,8 +131,7 @@ export async function saveCollectionItem(
 }
 
 export async function deleteCollectionItem(slug: string, id: string): Promise<ActionState> {
-  const session = await requireSession();
-  const collection = getCollection(slug);
+  const { session, collection } = await writer(slug);
   if (!collection) return { error: "Unknown section" };
 
   try {
@@ -149,8 +160,7 @@ export async function deleteCollectionItem(slug: string, id: string): Promise<Ac
  * wording should not appear on the live site before anyone has edited it.
  */
 export async function duplicateCollectionItem(slug: string, id: string): Promise<ActionState> {
-  const session = await requireSession();
-  const collection = getCollection(slug);
+  const { session, collection } = await writer(slug);
   if (!collection) return { error: "Unknown section" };
 
   try {
@@ -187,8 +197,7 @@ export async function duplicateCollectionItem(slug: string, id: string): Promise
 }
 
 export async function reorderCollection(slug: string, ids: string[]): Promise<ActionState> {
-  await requireSession();
-  const collection = getCollection(slug);
+  const { collection } = await writer(slug);
   if (!collection) return { error: "Unknown section" };
 
   await Promise.all(ids.map((id, index) => model(collection).update({ where: { id }, data: { order: index } })));
@@ -198,8 +207,7 @@ export async function reorderCollection(slug: string, ids: string[]): Promise<Ac
 }
 
 export async function toggleCollectionField(slug: string, id: string, field: string, value: boolean) {
-  await requireSession();
-  const collection = getCollection(slug);
+  const { collection } = await writer(slug);
   if (!collection) return { error: "Unknown section" };
 
   await model(collection).update({ where: { id }, data: { [field]: value } });

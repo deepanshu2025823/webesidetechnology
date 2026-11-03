@@ -53,7 +53,7 @@ export default async function CalculatorAdminPage() {
       />
 
       <CalculatorManager
-        readOnly={!canEdit(session.role, "website")}
+        readOnly={!canEdit(session, "website")}
         config={config ? { ...config } : DEFAULTS}
         groups={JSON.parse(JSON.stringify(groups)) as GroupRow[]}
       />

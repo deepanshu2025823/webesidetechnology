@@ -1921,6 +1921,34 @@ model ActivityDay {
   @@index([reviewedById])
 }
 
+/// A change to the default permission matrix in src/lib/permissions.ts, for a
+/// whole role ("role:SALES") or one person ("user:<id>"). `key` is a module key
+/// or "field:<field key>"; `access` is none, own, read or write (fields use
+/// none to hide and read to show). No row means the code default applies.
+model PermissionOverride {
+  id          String   @id @default(cuid())
+  subject     String   @db.VarChar(80)
+  key         String   @db.VarChar(60)
+  access      String   @db.VarChar(8)
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([subject, key])
+}
+
+/// A milestone saved for reuse, with the tasks it usually carries.
+model MilestoneTemplate {
+  id          String  @id @default(cuid())
+  title       String  @db.VarChar(240)
+  description String  @default("") @db.Text
+  /// string[] - task titles created along with the milestone
+  tasks       Json?
+  isActive    Boolean @default(true)
+  order       Int     @default(0)
+
+  @@index([isActive, order])
+}
+
 model LeaveRequest {
   id          String        @id @default(cuid())
   employeeId  String

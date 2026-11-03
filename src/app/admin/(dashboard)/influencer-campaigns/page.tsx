@@ -24,7 +24,7 @@ export default async function InfluencerCampaignsPage() {
     }),
   ]);
 
-  const editable = canEdit(session.role, "influencers");
+  const editable = canEdit(session, "influencers");
   const committed = campaigns.reduce((sum, c) => sum + c.cost, 0);
   const paid = campaigns.reduce((sum, c) => sum + c.paidAmount, 0);
 

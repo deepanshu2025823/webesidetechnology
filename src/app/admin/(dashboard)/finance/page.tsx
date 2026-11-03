@@ -78,7 +78,7 @@ export default async function FinancePage() {
   const collected = monthPayments._sum.amount ?? 0;
   const spent = monthExpenses._sum.amount ?? 0;
   const otherIncome = monthOtherIncome._sum.amount ?? 0;
-  const editable = canEdit(session.role, "finance");
+  const editable = canEdit(session, "finance");
 
   const dueSoon = dueEntries.filter((e) => e.dueDate && e.dueDate <= new Date(now.getTime() + 7 * 86_400_000));
   const duePayable = dueEntries

@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const dataset = getDataset(url.searchParams.get("dataset") ?? "");
   if (!dataset?.importer) return NextResponse.json({ error: "Unknown dataset" }, { status: 404 });
 
-  if (!canEdit(session.role, dataset.module)) {
+  if (!canEdit(session, dataset.module)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

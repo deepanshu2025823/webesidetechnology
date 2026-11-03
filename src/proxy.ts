@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { canView, type ModuleKey } from "@/lib/permissions";
+import { ensurePermissions } from "@/lib/permission-store";
 import type { Role } from "@/generated/prisma/enums";
 
 /**
@@ -16,6 +17,7 @@ const ROUTE_MODULES: [prefix: string, module: ModuleKey][] = [
   ["/admin/clients", "clients"],
   ["/admin/quotations", "quotations"],
   ["/admin/client-projects", "projects"],
+  ["/admin/milestone-templates", "projects"],
   ["/admin/tasks", "tasks"],
   ["/admin/finance", "finance"],
   ["/admin/renewals", "renewals"],
@@ -53,7 +55,12 @@ function moduleFor(pathname: string): ModuleKey {
 /** The signed-out screens: sign in, one-time code, forgot and reset password. */
 const PUBLIC_PATHS = new Set(["/admin/login", "/admin/login/otp", "/admin/forgot-password", "/admin/reset-password"]);
 
-export async function middleware(request: NextRequest) {
+/**
+ * Next 16 calls this file `proxy` (formerly middleware). It runs on Node.js,
+ * which is what lets it read the permission overrides saved in admin rather
+ * than only the defaults compiled into the code.
+ */
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
@@ -66,8 +73,9 @@ export async function middleware(request: NextRequest) {
   try {
     const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.AUTH_SECRET));
     const role = payload.role as Role;
+    await ensurePermissions();
 
-    if (!canView(role, moduleFor(pathname))) {
+    if (!canView({ id: String(payload.id ?? ""), role }, moduleFor(pathname))) {
       const home = new URL("/admin", request.url);
       home.searchParams.set("denied", moduleFor(pathname));
       return NextResponse.redirect(home);

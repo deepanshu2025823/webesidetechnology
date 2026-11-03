@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireModule } from "@/lib/auth";
-import { canEdit, canView } from "@/lib/permissions";
+import { canEdit, canSee, canView } from "@/lib/permissions";
 import { addClientActivity } from "@/app/admin/actions/crm";
 import { Badge, Card, PageHeader, inputClass } from "@/components/admin/ui";
 import { ClientContacts } from "@/components/admin/ClientContacts";
@@ -36,7 +36,9 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
   });
   if (!client) notFound();
 
-  const editable = canEdit(session.role, "clients");
+  const editable = canEdit(session, "clients");
+  const showContacts = canSee(session, "clients.contacts");
+  const showBilling = canSee(session, "clients.billing");
   const address = [client.addressLine, client.city, client.state, client.postalCode, client.country]
     .filter(Boolean)
     .join(", ");
@@ -78,6 +80,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          {showContacts ? (
           <ClientContacts
             clientId={client.id}
             contacts={client.contacts.map((c) => ({
@@ -91,6 +94,13 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             }))}
             editable={editable}
           />
+          ) : (
+            <Card title="Contacts">
+              <p className="text-sm text-slate-500">
+                Contact details for this client are not shown to your account. Ask an admin if you need them.
+              </p>
+            </Card>
+          )}
 
           <Card title="Timeline" description="Calls, emails, meetings and notes for this client.">
             {editable ? (
@@ -149,7 +159,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
         <div className="space-y-6">
           <Card title="Details">
             <dl className="space-y-4 text-sm">
-              {address ? (
+              {showBilling && address ? (
                 <div className="flex gap-3">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-gold-600" aria-hidden />
                   <div>
@@ -167,7 +177,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                   </div>
                 </div>
               ) : null}
-              {client.gstin ? (
+              {showBilling && client.gstin ? (
                 <div>
                   <dt className="text-xs uppercase tracking-wide text-slate-500">GSTIN</dt>
                   <dd className="text-navy-900">{client.gstin}</dd>
@@ -182,7 +192,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             </dl>
           </Card>
 
-          {canView(session.role, "quotations") ? (
+          {canView(session, "quotations") ? (
             <Card title="Quotations">
               {client.quotations.length ? (
                 <ul className="space-y-2">
@@ -204,7 +214,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               ) : (
                 <p className="text-sm text-slate-500">No quotations yet.</p>
               )}
-              {canEdit(session.role, "quotations") ? (
+              {canEdit(session, "quotations") ? (
                 <Link
                   href={`/admin/quotations/new?clientId=${client.id}`}
                   className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-gold-700 hover:text-gold-900"
@@ -215,7 +225,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
             </Card>
           ) : null}
 
-          {canView(session.role, "projects") ? (
+          {canView(session, "projects") ? (
             <Card title="Projects">
               {client.projects.length ? (
                 <ul className="space-y-2">
@@ -239,7 +249,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
               ) : (
                 <p className="text-sm text-slate-500">No projects yet.</p>
               )}
-              {canEdit(session.role, "projects") ? (
+              {canEdit(session, "projects") ? (
                 <Link
                   href={`/admin/client-projects/new?clientId=${client.id}`}
                   className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-gold-700 hover:text-gold-900"

@@ -42,7 +42,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     orderBy: { name: "asc" },
   });
 
-  const editable = canEdit(session.role, "events");
+  const editable = canEdit(session, "events");
   const vendorCost = event.vendors.reduce((sum, v) => sum + v.quotedAmount, 0);
   const sponsorValue = event.sponsors.reduce((sum, s) => sum + s.amount, 0);
   const attended = event.attendees.filter((a) => a.status === "ATTENDED").length;
