@@ -1940,7 +1940,8 @@ model PermissionOverride {
 model MilestoneTemplate {
   id          String  @id @default(cuid())
   title       String  @db.VarChar(240)
-  description String  @default("") @db.Text
+  /// VarChar, not Text: TiDB, like MySQL, rejects a default on a TEXT column.
+  description String  @default("") @db.VarChar(1000)
   /// string[] - task titles created along with the milestone
   tasks       Json?
   isActive    Boolean @default(true)
