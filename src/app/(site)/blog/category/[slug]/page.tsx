@@ -5,13 +5,16 @@ import { PostCard } from "@/components/sections/PostCard";
 import { JsonLd } from "@/components/JsonLd";
 import { prisma } from "@/lib/prisma";
 import { getPostCategories, getPosts } from "@/lib/queries";
+import { staticParams } from "@/lib/build-safe";
 import { breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
 type Params = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
-  const categories = await getPostCategories();
-  return categories.map((c) => ({ slug: c.slug }));
+  return staticParams("/blog/category/[slug]", async () => {
+    const categories = await getPostCategories();
+    return categories.map((c) => ({ slug: c.slug }));
+  });
 }
 
 export async function generateMetadata({ params }: Params) {

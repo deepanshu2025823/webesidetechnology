@@ -4,6 +4,7 @@ import { PageHero } from "@/components/site/PageHero";
 import { JsonLd } from "@/components/JsonLd";
 import { prisma } from "@/lib/prisma";
 import { getPageBySlug } from "@/lib/queries";
+import { staticParams } from "@/lib/build-safe";
 import { breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -12,11 +13,13 @@ type Params = { params: Promise<{ slug: string }> };
 const RESERVED = new Set(["about", "services", "portfolio", "blog", "contact", "admin", "api"]);
 
 export async function generateStaticParams() {
-  const pages = await prisma.page.findMany({
-    where: { status: "PUBLISHED" },
-    select: { slug: true },
+  return staticParams("/[slug]", async () => {
+    const pages = await prisma.page.findMany({
+      where: { status: "PUBLISHED" },
+      select: { slug: true },
+    });
+    return pages.filter((p) => !RESERVED.has(p.slug)).map((p) => ({ slug: p.slug }));
   });
-  return pages.filter((p) => !RESERVED.has(p.slug)).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: Params) {

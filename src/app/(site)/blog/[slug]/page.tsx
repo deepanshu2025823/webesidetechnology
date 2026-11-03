@@ -10,13 +10,16 @@ import { JsonLd } from "@/components/JsonLd";
 import { ShareLinks } from "@/components/site/ShareLinks";
 import { getPostBySlug, getPosts, getSettings } from "@/lib/queries";
 import { breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
+import { staticParams } from "@/lib/build-safe";
 import { absoluteUrl, formatDate } from "@/lib/utils";
 
 type Params = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
-  const posts = await getPosts({ take: 50 });
-  return posts.map((p) => ({ slug: p.slug }));
+  return staticParams("/blog/[slug]", async () => {
+    const posts = await getPosts({ take: 50 });
+    return posts.map((p) => ({ slug: p.slug }));
+  });
 }
 
 export async function generateMetadata({ params }: Params) {

@@ -12,13 +12,16 @@ import { JsonLd } from "@/components/JsonLd";
 import { ContactForm } from "@/components/site/ContactForm";
 import { getServiceBySlug, getServices, getSettings } from "@/lib/queries";
 import { breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
+import { staticParams } from "@/lib/build-safe";
 import { absoluteUrl, asArray, excerptFrom } from "@/lib/utils";
 
 type Params = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
-  const services = await getServices();
-  return services.map((s) => ({ slug: s.slug }));
+  return staticParams("/services/[slug]", async () => {
+    const services = await getServices();
+    return services.map((s) => ({ slug: s.slug }));
+  });
 }
 
 export async function generateMetadata({ params }: Params) {

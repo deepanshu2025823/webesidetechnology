@@ -15,11 +15,17 @@ import { mariaDbConfig } from "@/lib/db-config";
  * Retrying is safe here because nothing was sent: the connection died before
  * the statement reached the server. Anything that did reach it is left alone.
  */
+// Lower case: they are matched against the lower-cased message. "read
+// ECONNRESET" was once written in capitals here and so never matched — the
+// very error that kept failing builds was never retried at all.
 const RETRYABLE = [
   "socket has unexpectedly been closed",
   "connection closed",
   "connection is closed",
-  "read ECONNRESET",
+  "read econnreset",
+  "econnreset",
+  "socket timeout",
+  "etimedout",
   "server has closed the connection",
 ];
 
@@ -47,9 +53,10 @@ function createPrismaClient() {
             } catch (error) {
               if (!isRetryable(error) || attempt === ATTEMPTS) throw error;
               lastError = error;
-              // Short, growing pause: the pool needs a moment to notice the
-              // dead connection and open a replacement.
-              await wait(attempt * 250);
+              // Growing pause - 1s, 2s, 4s - so the pool has time to drop the
+              // dead connection and open a fresh one, rather than handing the
+              // retry straight back to the same broken socket.
+              await wait(1000 * 2 ** (attempt - 1));
             }
           }
 

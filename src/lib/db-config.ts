@@ -24,5 +24,11 @@ export function mariaDbConfig(databaseUrl = process.env.DATABASE_URL) {
     initializationTimeout: 30_000,
     acquireTimeout: 30_000,
     idleTimeout: 60,
+    // A connection the far end dropped without a word otherwise hangs a query
+    // for minutes (a build sat 4½ minutes on one before ECONNRESET). Keep-alive
+    // probes notice it; the socket timeout turns a stalled read into a
+    // retryable error after a minute. No query here runs anywhere near that.
+    keepAliveDelay: 10_000,
+    socketTimeout: 60_000,
   };
 }

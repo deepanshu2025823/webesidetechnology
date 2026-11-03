@@ -10,13 +10,16 @@ import { JsonLd } from "@/components/JsonLd";
 import { buttonClass } from "@/components/ui/Button";
 import { getProjectBySlug, getProjects, getSettings } from "@/lib/queries";
 import { breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
+import { staticParams } from "@/lib/build-safe";
 import { absoluteUrl, asArray, formatDate } from "@/lib/utils";
 
 type Params = { params: Promise<{ slug: string }> };
 
 export async function generateStaticParams() {
-  const projects = await getProjects();
-  return projects.map((p) => ({ slug: p.slug }));
+  return staticParams("/portfolio/[slug]", async () => {
+    const projects = await getProjects();
+    return projects.map((p) => ({ slug: p.slug }));
+  });
 }
 
 export async function generateMetadata({ params }: Params) {
