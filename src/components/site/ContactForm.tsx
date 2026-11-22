@@ -10,12 +10,15 @@ const BUDGETS = ["Under ₹50,000", "₹50,000 – ₹2 lakh", "₹2 – ₹5 la
 export function ContactForm({
   services,
   defaultService,
+  defaultMessage,
   source = "contact-page",
   compact = false,
   className,
 }: {
   services: string[];
   defaultService?: string;
+  /** Prefilled message, e.g. when a popup sent the visitor here about an offer. */
+  defaultMessage?: string;
   source?: string;
   compact?: boolean;
   className?: string;
@@ -112,6 +115,7 @@ export function ContactForm({
           name="message"
           rows={compact ? 3 : 5}
           required
+          defaultValue={defaultMessage}
           placeholder="What are you trying to achieve, and by when?"
           className={inputClass}
         />

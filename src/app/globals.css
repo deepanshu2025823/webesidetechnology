@@ -64,6 +64,18 @@
     border-color: color-mix(in oklab, var(--color-navy-900) 10%, transparent);
   }
 
+  /*
+   * Nothing may push the page wider than the screen. The logo marquee, the
+   * video row and the decorative glows all run past the edge inside their own
+   * clipped boxes, but iOS Safari still let a sideways swipe pan the whole page,
+   * leaving bands half-shifted until a refresh. `clip` rather than `hidden`:
+   * hidden would make the body a scroll container and break the sticky header.
+   */
+  html,
+  body {
+    overflow-x: clip;
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;

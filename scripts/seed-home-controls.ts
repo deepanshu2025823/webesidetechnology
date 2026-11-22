@@ -38,6 +38,42 @@ const INDUSTRIES = [
   { icon: "Briefcase", image: "/uploads/stock/industry-corporate.webp", name: "Corporate & B2B Services", description: "CRM and HRMS portals, company websites and lead generation." },
 ];
 
+/**
+ * Pictures for industries the client added in admin without one. Matched by
+ * name and only filled while the card has none, so a picture they upload later
+ * always wins.
+ */
+const EXTRA_PICTURES: Record<string, string> = {
+  "Art & Music": "/uploads/stock/industry-art-music.webp",
+  "Manufacturing & Suppliers": "/uploads/stock/industry-manufacturing.webp",
+  "Portfolio & Service Website": "/uploads/stock/industry-websites.webp",
+  "Fashion & Apparels": "/uploads/stock/industry-fashion.webp",
+};
+
+/** The two side popups the client asked for; editable at /admin/site-popups. */
+const POPUPS = [
+  {
+    title: "Become a Referral Partner",
+    body: "Know a business that needs a website, app or marketing? Refer them to Sahab India and earn on every deal that closes.",
+    ctaLabel: "Join as a partner",
+    ctaUrl: "/contact?topic=referral-partner",
+    tabLabel: "Refer & earn",
+    side: "LEFT",
+    delaySeconds: 8,
+    order: 0,
+  },
+  {
+    title: "Claim Your New Client Discount",
+    body: "Starting your first project with us? Ask for your new client discount on websites, apps and marketing.",
+    ctaLabel: "Claim my discount",
+    ctaUrl: "/contact?topic=new-client-discount",
+    tabLabel: "New client offer",
+    side: "RIGHT",
+    delaySeconds: 4,
+    order: 1,
+  },
+];
+
 const WHY = {
   whyEyebrow: "Why Sahab India",
   whyTitle: "An agency that behaves like your in-house team",
@@ -92,11 +128,21 @@ async function main() {
     // Cards seeded before pictures existed get theirs; one an editor has
     // already given a picture keeps it.
     let pictured = 0;
-    for (const item of INDUSTRIES) {
-      const { count } = await prisma.industry.updateMany({ where: { name: item.name, image: null }, data: { image: item.image } });
+    const pictures = [...INDUSTRIES.map((i) => [i.name, i.image] as const), ...Object.entries(EXTRA_PICTURES)];
+    for (const [name, image] of pictures) {
+      const { count } = await prisma.industry.updateMany({ where: { name, image: null }, data: { image } });
       pictured += count;
     }
     console.log(`industries: ${industries} already present, ${pictured} given a picture`);
+  }
+
+  // -------------------------------------------------------------- popups
+  const popups = await prisma.sitePopup.count();
+  if (popups === 0) {
+    await prisma.sitePopup.createMany({ data: POPUPS });
+    console.log(`popups: seeded ${POPUPS.length}`);
+  } else {
+    console.log(`popups: ${popups} already present, left alone`);
   }
 
   // ------------------------------------------------------- why-us block

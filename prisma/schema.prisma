@@ -544,6 +544,26 @@ model Industry {
   @@index([isActive, order])
 }
 
+/// A card that slides in from the side of every public page, and tucks back to
+/// a tab on the edge when closed.
+model SitePopup {
+  id           String  @id @default(cuid())
+  title        String  @db.VarChar(160)
+  body         String  @default("") @db.VarChar(600)
+  ctaLabel     String  @default("") @db.VarChar(80)
+  ctaUrl       String  @default("") @db.VarChar(500)
+  image        String? @db.VarChar(500)
+  /// Short text on the edge tab once it is closed.
+  tabLabel     String  @default("") @db.VarChar(40)
+  /// LEFT or RIGHT
+  side         String  @default("RIGHT") @db.VarChar(8)
+  delaySeconds Int     @default(6)
+  isActive     Boolean @default(true)
+  order        Int     @default(0)
+
+  @@index([isActive, order])
+}
+
 /// How much air sits around a section. Named rather than a pixel value so the
 /// page keeps a consistent rhythm whatever an editor picks.
 enum SectionSpacing {

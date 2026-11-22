@@ -65,7 +65,10 @@ export function PostForm({
                 <textarea id="excerpt" name="excerpt" rows={3} defaultValue={post?.excerpt} className={inputClass} />
               </FieldWrap>
 
-              <FieldWrap label="Cover image">
+              <FieldWrap
+                label="Cover image"
+                help="1600 × 900 px (16:9), at least 1200 × 675. Cards and the article show it at exactly this shape."
+              >
                 <ImageInput name="coverImage" defaultValue={post?.coverImage} folder="blog" />
               </FieldWrap>
             </div>

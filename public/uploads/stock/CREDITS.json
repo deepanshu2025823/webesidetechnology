@@ -240,6 +240,30 @@
       "file": "/uploads/stock/industry-retail.webp",
       "source": "https://unsplash.com/photos/photo-1441986300917-64674bd600d8",
       "bytes": 91390
+    },
+    {
+      "name": "industry-fashion",
+      "file": "/uploads/stock/industry-fashion.webp",
+      "source": "https://unsplash.com/photos/photo-1490481651871-ab68de25d43d",
+      "bytes": 48700
+    },
+    {
+      "name": "industry-art-music",
+      "file": "/uploads/stock/industry-art-music.webp",
+      "source": "https://unsplash.com/photos/photo-1511379938547-c1f69419868d",
+      "bytes": 79440
+    },
+    {
+      "name": "industry-websites",
+      "file": "/uploads/stock/industry-websites.webp",
+      "source": "https://unsplash.com/photos/photo-1547658719-da2b51169166",
+      "bytes": 104366
+    },
+    {
+      "name": "industry-manufacturing",
+      "file": "/uploads/stock/industry-manufacturing.webp",
+      "source": "https://unsplash.com/photos/photo-1504917595217-d4dc5ebe6122",
+      "bytes": 80104
     }
   ]
 }

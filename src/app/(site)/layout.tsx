@@ -4,7 +4,8 @@ import { JsonLd } from "@/components/JsonLd";
 import { WhatsAppButton } from "@/components/site/WhatsAppButton";
 import { MobileBottomNav } from "@/components/site/MobileBottomNav";
 import { ChatWidget } from "@/components/site/ChatWidget";
-import { getMenu, getSettings } from "@/lib/queries";
+import { SidePopups } from "@/components/site/SidePopups";
+import { getMenu, getPopups, getSettings } from "@/lib/queries";
 import { organizationJsonLd } from "@/lib/seo";
 
 // Content is admin-managed, so pages rebuild on a short interval and are
@@ -12,13 +13,14 @@ import { organizationJsonLd } from "@/lib/seo";
 export const revalidate = 300;
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [settings, header, footerServices, footerCompany, legal, jsonLd] = await Promise.all([
+  const [settings, header, footerServices, footerCompany, legal, jsonLd, popups] = await Promise.all([
     getSettings(),
     getMenu("HEADER"),
     getMenu("FOOTER_SERVICES"),
     getMenu("FOOTER_COMPANY"),
     getMenu("LEGAL"),
     organizationJsonLd(),
+    getPopups(),
   ]);
 
   const nav: NavNode[] = header.map((item) => ({
@@ -70,6 +72,20 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       {settings.whatsapp ? <WhatsAppButton number={settings.whatsapp} siteName={settings.siteName} /> : null}
 
       <ChatWidget siteName={settings.siteName} />
+
+      <SidePopups
+        popups={popups.map((p) => ({
+          id: p.id,
+          title: p.title,
+          body: p.body,
+          ctaLabel: p.ctaLabel,
+          ctaUrl: p.ctaUrl,
+          image: p.image,
+          tabLabel: p.tabLabel,
+          side: p.side,
+          delaySeconds: p.delaySeconds,
+        }))}
+      />
 
       <MobileBottomNav phone={settings.phone} whatsapp={settings.whatsapp} siteName={settings.siteName} />
     </>

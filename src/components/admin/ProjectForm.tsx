@@ -86,7 +86,11 @@ export function ProjectForm({
                 <textarea id="summary" name="summary" rows={2} defaultValue={project?.summary} className={inputClass} />
               </FieldWrap>
 
-              <FieldWrap label="Cover image" className="sm:col-span-2">
+              <FieldWrap
+                label="Cover image"
+                help="1600 × 1000 px (16:10), at least 1200 × 750. The card crops to this shape; keep any text inside the middle 80% so the edges can be trimmed."
+                className="sm:col-span-2"
+              >
                 <ImageInput name="coverImage" defaultValue={project?.coverImage} folder="portfolio" />
               </FieldWrap>
             </div>

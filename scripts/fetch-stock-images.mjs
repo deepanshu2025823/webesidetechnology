@@ -64,6 +64,10 @@ const IMAGES = [
   ["photo-1560518883-ce09059eeffa", "industry-real-estate", "card"],
   ["photo-1517248135467-4c7edcad34c4", "industry-hospitality", "card"],
   ["photo-1556761175-5973dc0f32e7", "industry-corporate", "card"],
+  ["photo-1511379938547-c1f69419868d", "industry-art-music", "card"],
+  ["photo-1504917595217-d4dc5ebe6122", "industry-manufacturing", "card"],
+  ["photo-1547658719-da2b51169166", "industry-websites", "card"],
+  ["photo-1490481651871-ab68de25d43d", "industry-fashion", "card"],
 
   // Page headers
   ["photo-1522071820081-009f0129c71c", "page-about", "wide"],

@@ -223,6 +223,40 @@ export const COLLECTIONS: Record<string, Collection> = {
     ],
   },
 
+  "site-popups": {
+    model: "sitePopup",
+    slug: "site-popups",
+    title: "Side popups",
+    singular: "Popup",
+    description:
+      "Cards that slide in from the side of the website after a short delay. Closing one tucks it back to a small tab on the edge that visitors can click to open it again. On phones only one is open at a time.",
+    titleField: "title",
+    orderBy: { order: "asc" },
+    sortable: true,
+    fields: [
+      { name: "title", label: "Heading", type: "text", required: true, inList: true, placeholder: "Become a Referral Partner" },
+      { name: "body", label: "Text", type: "textarea", colSpan: 2, help: "One or two short lines." },
+      { name: "ctaLabel", label: "Button text", type: "text", placeholder: "Join now" },
+      { name: "ctaUrl", label: "Button link", type: "text", placeholder: "/contact?topic=referral-partner", help: "A page on this site (/contact…) or a full https:// link." },
+      { name: "tabLabel", label: "Edge tab text", type: "text", placeholder: "Refer & earn", help: "Shown on the small tab after the popup is closed. Keep it to two or three words." },
+      {
+        name: "side",
+        label: "Slides in from",
+        type: "select",
+        defaultValue: "RIGHT",
+        inList: true,
+        options: [
+          { value: "LEFT", label: "Left" },
+          { value: "RIGHT", label: "Right" },
+        ],
+      },
+      { name: "delaySeconds", label: "Appears after (seconds)", type: "number", defaultValue: 6 },
+      { name: "image", label: "Picture (optional)", type: "image", help: "Landscape, about 2:1." },
+      ACTIVE_FIELD,
+      ORDER_FIELD,
+    ],
+  },
+
   "milestone-templates": {
     model: "milestoneTemplate",
     slug: "milestone-templates",

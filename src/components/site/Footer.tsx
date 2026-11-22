@@ -4,6 +4,7 @@ import {
   FacebookIcon,
   InstagramIcon,
   LinkedinIcon,
+  WhatsappIcon,
   XIcon,
   YoutubeIcon,
 } from "@/components/ui/SocialIcons";
@@ -25,9 +26,14 @@ export function Footer({
   companyLinks: Item[];
   legalLinks: Item[];
 }) {
+  const waDigits = (settings.whatsapp || settings.phone).replace(/[^\d]/g, "");
+  // WhatsApp and email sit with the social icons: for most visitors they are
+  // the quicker way in than any profile. Both come from Settings → Contact.
   const socials = [
-    { href: settings.facebook, Icon: FacebookIcon, label: "Facebook" },
     { href: settings.instagram, Icon: InstagramIcon, label: "Instagram" },
+    { href: waDigits ? `https://wa.me/${waDigits}` : "", Icon: WhatsappIcon, label: "WhatsApp" },
+    { href: settings.email ? `mailto:${settings.email}` : "", Icon: Mail, label: "Email" },
+    { href: settings.facebook, Icon: FacebookIcon, label: "Facebook" },
     { href: settings.linkedin, Icon: LinkedinIcon, label: "LinkedIn" },
     { href: settings.twitter, Icon: XIcon, label: "X" },
     { href: settings.youtube, Icon: YoutubeIcon, label: "YouTube" },
@@ -59,8 +65,8 @@ export function Footer({
                   <a
                     key={label}
                     href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    // mailto: opens the mail app; a new tab would be left blank.
+                    {...(href.startsWith("mailto:") ? {} : { target: "_blank", rel: "noopener noreferrer" })}
                     aria-label={label}
                     className="grid size-10 place-items-center rounded-full border border-white/15 text-navy-200 transition-all hover:-translate-y-0.5 hover:border-gold-400 hover:text-gold-300"
                   >

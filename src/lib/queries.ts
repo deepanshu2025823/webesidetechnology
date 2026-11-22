@@ -226,6 +226,10 @@ export const getHighlights = cache(async () =>
  * Returned as plain rows; `resolveSections` merges them onto the list the code
  * ships, so a section the editor has never touched still appears.
  */
+export const getPopups = cache(async () =>
+  prisma.sitePopup.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
+);
+
 export const getIndustries = cache(async () =>
   prisma.industry.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
 );

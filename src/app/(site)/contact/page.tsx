@@ -17,7 +17,20 @@ export async function generateMetadata() {
   });
 }
 
-export default async function ContactPage() {
+/**
+ * `?topic=referral-partner` arrives from the side popups. It becomes the lead's
+ * source, so the team can tell which offer brought the enquiry in, and starts
+ * the message off so the visitor does not have to explain it again.
+ */
+function readTopic(raw: string | string[] | undefined) {
+  const slug = (Array.isArray(raw) ? raw[0] : raw)?.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40) ?? "";
+  if (!slug) return null;
+  const words = slug.replace(/-/g, " ").trim();
+  return { slug, title: words.charAt(0).toUpperCase() + words.slice(1) };
+}
+
+export default async function ContactPage({ searchParams }: { searchParams: Promise<{ topic?: string | string[] }> }) {
+  const topic = readTopic((await searchParams).topic);
   const [settings, services] = await Promise.all([getSettings(), getServices()]);
 
   const address = [settings.addressLine, settings.city, settings.state, settings.postalCode, settings.country]
@@ -107,7 +120,17 @@ export default async function ContactPage() {
               <div className="rounded-3xl border border-navy-900/10 bg-cream p-7 shadow-sm sm:p-9">
                 <h2 className="text-2xl text-navy-900">Project enquiry</h2>
                 <p className="mt-2 text-sm text-slate-600">Fields marked * are required.</p>
-                <ContactForm className="mt-7" services={services.map((s) => s.title)} />
+                {topic ? (
+                  <p className="mt-6 rounded-xl border border-gold-400/50 bg-gold-50 px-4 py-3 text-sm text-navy-900">
+                    You are asking about: <span className="font-semibold">{topic.title}</span>
+                  </p>
+                ) : null}
+                <ContactForm
+                  className="mt-7"
+                  services={services.map((s) => s.title)}
+                  source={topic ? `offer-${topic.slug}` : undefined}
+                  defaultMessage={topic ? `I'm interested in: ${topic.title}.\n\n` : undefined}
+                />
               </div>
 
               {/* Anyone who only wants a number can self-serve instead of waiting. */}
