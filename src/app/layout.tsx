@@ -1,22 +1,30 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { getSettings } from "@/lib/queries";
 import { buildMetadata } from "@/lib/seo";
 import { siteUrl } from "@/lib/utils";
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
+/*
+ * Self-hosted rather than next/font/google: the Google variant downloads the
+ * files during `next build`, and twice a deploy failed because the build
+ * server could not reach fonts.gstatic.com. These are the same families
+ * (Latin, variable weight) from Fontsource, under the SIL Open Font License,
+ * so the build needs nothing from the network.
+ */
+const playfair = localFont({
+  src: "./fonts/PlayfairDisplay-Variable.woff2",
   variable: "--font-playfair",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  weight: "400 900",
 });
 
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
+const jakarta = localFont({
+  src: "./fonts/PlusJakartaSans-Variable.woff2",
   variable: "--font-jakarta",
   display: "swap",
+  weight: "200 800",
 });
 
 export const viewport: Viewport = {
