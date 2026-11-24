@@ -427,7 +427,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
 
         <Card title="Structured data">
           <div className="grid gap-5 sm:grid-cols-2">
-            <FieldWrap label="Organisation type" htmlFor="schemaOrgType" help="Use LocalBusiness if you serve walk-in clients.">
+            <FieldWrap label="Organisation type" htmlFor="schemaOrgType" help="LocalBusiness and ProfessionalService need a street address under Contact; until one is filled in, Google is sent Organization instead, so the markup stays valid.">
               <select id="schemaOrgType" name="schemaOrgType" defaultValue={value("schemaOrgType") || "Organization"} className={inputClass}>
                 <option value="Organization">Organization</option>
                 <option value="LocalBusiness">LocalBusiness</option>

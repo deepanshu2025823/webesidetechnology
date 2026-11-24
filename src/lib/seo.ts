@@ -24,7 +24,11 @@ export async function buildMetadata(input: SeoInput = {}): Promise<Metadata> {
   // Titles are built here rather than through Next's `%s` template so a page
   // whose meta title already names the brand is not suffixed twice.
   const raw = input.title?.trim() || settings.metaTitle || `${siteName} — ${settings.tagline}`;
-  const title = raw.toLowerCase().includes(siteName.toLowerCase()) ? raw : `${raw} | ${siteName}`;
+  // The brand suffix goes only where it fits: search results cut titles at
+  // about 60 characters, and audit tools flag anything past 70. A long page
+  // title keeps its own words rather than losing them to the suffix.
+  const branded = `${raw} | ${siteName}`;
+  const title = raw.toLowerCase().includes(siteName.toLowerCase()) || branded.length > 60 ? raw : branded;
   const description =
     input.description?.trim() || settings.metaDescription || excerptFrom(settings.description || "", 160);
   const keywords = (input.keywords || settings.metaKeywords || "")
@@ -64,15 +68,25 @@ export async function buildMetadata(input: SeoInput = {}): Promise<Metadata> {
 }
 
 /** Organization + WebSite JSON-LD injected once, in the root layout. */
+/**
+ * Local-business types (LocalBusiness, ProfessionalService and the like) are
+ * only valid with a street address; without one every page carried an invalid
+ * structured-data item. Until Settings has an address line, the plain
+ * Organization type is used instead, which needs none.
+ */
+const NEEDS_ADDRESS = new Set(["LocalBusiness", "ProfessionalService", "Store", "HomeAndConstructionBusiness"]);
+
 export async function organizationJsonLd() {
   const s = await getSettings();
   const sameAs = [s.facebook, s.instagram, s.linkedin, s.twitter, s.youtube].filter(Boolean);
+  const chosen = s.schemaOrgType || "Organization";
+  const type = NEEDS_ADDRESS.has(chosen) && !s.addressLine ? "Organization" : chosen;
 
   return {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": s.schemaOrgType || "Organization",
+        "@type": type,
         "@id": absoluteUrl("/#organization"),
         name: s.siteName,
         url: absoluteUrl("/"),
